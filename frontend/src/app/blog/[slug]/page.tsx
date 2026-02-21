@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import DOMPurify from 'isomorphic-dompurify';
 import { API_URL } from '@/lib/constants';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -151,7 +152,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           )}
 
           <article className="prose prose-lg max-w-none text-text-primary prose-headings:text-text-primary prose-a:text-primary prose-strong:text-text-primary">
-            <div dangerouslySetInnerHTML={{ __html: post.content }} />
+            <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }} />
           </article>
 
           {/* Tags */}
