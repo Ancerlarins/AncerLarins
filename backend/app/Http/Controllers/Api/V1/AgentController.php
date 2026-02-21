@@ -52,8 +52,7 @@ class AgentController extends Controller
 
     public function show(AgentProfile $agent): JsonResponse
     {
-        $agent->load(['user', 'officeArea', 'properties' => fn ($q) => $q->approved()->latest()->limit(6)]);
-        $agent->properties->load(['propertyType', 'city', 'images']);
+        $agent->load(['user', 'officeArea', 'properties' => fn ($q) => $q->approved()->latest()->limit(6)->with(['propertyType', 'city', 'images'])]);
 
         return $this->successResponse(new AgentDetailResource($agent));
     }

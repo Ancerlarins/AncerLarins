@@ -139,6 +139,11 @@ class Property extends Model
         return $this->hasMany(SavedProperty::class);
     }
 
+    public function reports(): Relations\MorphMany
+    {
+        return $this->morphMany(Report::class, 'reportable');
+    }
+
     public function virtualTour(): Relations\HasOne
     {
         return $this->hasOne(VirtualTour::class);

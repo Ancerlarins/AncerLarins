@@ -29,5 +29,9 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="DB_DATABASE" value="ancerlarins_test"/>
+        <env name="DB_USERNAME" value="postgres"/>
+        <env name="DB_PASSWORD" value="***REMOVED***"/>
+        <env name="DB_PORT" value="5433"/>
     </php>
 </phpunit>

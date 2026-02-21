@@ -130,6 +130,16 @@ class UserController extends Controller
         return $this->successResponse(['count' => $count]);
     }
 
+    /**
+     * Register Push Token
+     *
+     * Register a device push notification token.
+     *
+     * @bodyParam token string required The device push token. Example: ExponentPushToken[xxxx]
+     * @bodyParam device_type string required Device platform. Allowed: web, android, ios. Example: android
+     *
+     * @response 200 {"success": true, "message": "Push token registered.", "data": null}
+     */
     public function registerPushToken(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -151,6 +161,13 @@ class UserController extends Controller
         return $this->successResponse(null, 'Push token registered.');
     }
 
+    /**
+     * Remove Push Token
+     *
+     * Remove a registered push notification token.
+     *
+     * @bodyParam token string required The device push token to remove.
+     */
     public function removePushToken(Request $request): JsonResponse
     {
         $data = $request->validate([

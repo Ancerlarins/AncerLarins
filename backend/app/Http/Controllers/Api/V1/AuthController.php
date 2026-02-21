@@ -69,6 +69,15 @@ class AuthController extends Controller
         return $this->successResponse(null, 'OTP sent to your phone.');
     }
 
+    /**
+     * Forgot Password
+     *
+     * Send a password reset OTP to the user's phone.
+     *
+     * @bodyParam phone string required The user's phone number. Example: +2348012345678
+     *
+     * @response 200 {"success": true, "message": "If an account exists, an OTP has been sent.", "data": null}
+     */
     public function forgotPassword(Request $request): JsonResponse
     {
         $request->validate([
@@ -80,6 +89,16 @@ class AuthController extends Controller
         return $this->successResponse(null, 'If an account exists, an OTP has been sent.');
     }
 
+    /**
+     * Refresh Token
+     *
+     * Exchange a refresh token for new access and refresh tokens.
+     *
+     * @bodyParam refresh_token string required The refresh token. Example: eyJ0eXAiOiJKV1Q...
+     *
+     * @response 200 {"success": true, "message": "Token refreshed.", "data": {"access_token": "1|abc...", "refresh_token": "eyJ..."}}
+     * @response 401 {"success": false, "message": "Invalid refresh token."}
+     */
     public function refresh(Request $request): JsonResponse
     {
         $request->validate(['refresh_token' => 'required|string']);

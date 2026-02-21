@@ -15,6 +15,7 @@ class PropertyImage extends Model
 
     protected $fillable = [
         'property_id', 'image_url', 'thumbnail_url', 'watermarked_url',
+        'cloudinary_public_id',
         'caption', 'sort_order', 'is_cover', 'width', 'height', 'file_size_bytes',
     ];
 

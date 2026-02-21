@@ -148,6 +148,13 @@ class User extends Authenticatable
         return $query->where('phone_verified', true);
     }
 
+    // ── Helpers ─────────────────────────────────────────
+
+    public function isAdmin(): bool
+    {
+        return in_array($this->role, [UserRole::Admin, UserRole::SuperAdmin]);
+    }
+
     // ── Accessors ────────────────────────────────────────
 
     public function getFullNameAttribute(): string

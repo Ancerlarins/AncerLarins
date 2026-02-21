@@ -74,7 +74,19 @@ class EstateController extends Controller
     }
 
     /**
-     * Auth: create a review for an estate.
+     * Create Estate Review
+     *
+     * Submit a review for an estate. One review per user per estate.
+     *
+     * @authenticated
+     * @bodyParam rating integer required Rating from 1 to 5. Example: 4
+     * @bodyParam pros string What you liked about the estate. Example: Great security and amenities
+     * @bodyParam cons string What could be improved. Example: Service charge is high
+     * @bodyParam lived_from string Date you started living there. Example: 2023-01-15
+     * @bodyParam lived_to string Date you stopped living there. Example: 2024-06-30
+     *
+     * @response 201 {"success": true, "message": "Review submitted.", "data": {}}
+     * @response 422 {"success": false, "message": "You have already reviewed this estate."}
      */
     public function createReview(Request $request, Estate $estate): JsonResponse
     {
@@ -137,7 +149,29 @@ class EstateController extends Controller
         );
     }
 
-    /** @authenticated */
+    /**
+     * Create Estate
+     *
+     * Create a new estate/development listing.
+     *
+     * @authenticated
+     * @bodyParam name string required Estate name. Example: Lekki Gardens Phase 2
+     * @bodyParam area_id string required UUID of the area. Example: 9c1a2b3d-4e5f-6789-abcd-ef0123456789
+     * @bodyParam estate_type string required Type of estate: gated_estate, open_estate, highrise, mixed_use. Example: gated_estate
+     * @bodyParam description string Description of the estate.
+     * @bodyParam developer string Developer company name. Example: Lekki Gardens Ltd
+     * @bodyParam year_built integer Year built. Example: 2020
+     * @bodyParam total_units integer Total residential units. Example: 200
+     * @bodyParam amenities string[] List of amenities. Example: ["swimming_pool", "gym"]
+     * @bodyParam security_type string Security type. Example: 24/7 armed guards
+     * @bodyParam service_charge_kobo integer Service charge in kobo. Example: 500000
+     * @bodyParam service_charge_period string Charge period. Example: yearly
+     * @bodyParam electricity_source string Electricity source. Example: Independent power
+     * @bodyParam water_source string Water source. Example: Borehole
+     * @bodyParam cover_image_url string URL of cover image.
+     *
+     * @response 201 {"success": true, "message": "Estate created.", "data": {}}
+     */
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([

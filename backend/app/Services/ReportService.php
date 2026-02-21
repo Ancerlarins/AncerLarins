@@ -38,6 +38,16 @@ class ReportService
         $report->resolve($admin->id, $note);
     }
 
+    public function dismiss(Report $report, User $admin, ?string $note = null): void
+    {
+        $report->update([
+            'status'          => ReportStatus::Dismissed,
+            'resolved_by'     => $admin->id,
+            'resolution_note' => $note,
+            'resolved_at'     => now(),
+        ]);
+    }
+
     protected function checkAutoArchive(string $type, string $id): void
     {
         if ($type !== 'property') {

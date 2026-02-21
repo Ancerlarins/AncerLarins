@@ -85,6 +85,16 @@ class AdminController extends Controller
         );
     }
 
+    /**
+     * Feature a Property
+     *
+     * Mark a property as featured for a specified number of days.
+     *
+     * @bodyParam property_id string required UUID of the property. Example: 9c1a2b3d-4e5f-6789-abcd-ef0123456789
+     * @bodyParam days integer Number of days to feature. Default: 30. Example: 14
+     *
+     * @response 200 {"success": true, "message": "Property featured.", "data": null}
+     */
     public function featureProperty(Request $request): JsonResponse
     {
         $request->validate([
@@ -162,6 +172,13 @@ class AdminController extends Controller
         return $this->paginatedResponse($reports);
     }
 
+    /**
+     * Resolve a Report
+     *
+     * @bodyParam resolution_note string Optional note about the resolution. Example: Investigated and removed listing.
+     *
+     * @response 200 {"success": true, "message": "Report resolved.", "data": null}
+     */
     public function resolveReport(Request $request, Report $report): JsonResponse
     {
         $request->validate(['resolution_note' => 'nullable|string|max:1000']);
@@ -169,6 +186,27 @@ class AdminController extends Controller
         $this->reportService->resolve($report, $request->user(), $request->resolution_note);
 
         return $this->successResponse(null, 'Report resolved.');
+    }
+
+    public function unbanUser(Request $request): JsonResponse
+    {
+        $request->validate([
+            'user_id' => 'required|uuid|exists:users,id',
+        ]);
+
+        $user = User::findOrFail($request->user_id);
+        $this->adminService->unbanUser($user);
+
+        return $this->successResponse(null, 'User unbanned.');
+    }
+
+    public function dismissReport(Request $request, Report $report): JsonResponse
+    {
+        $request->validate(['resolution_note' => 'nullable|string|max:1000']);
+
+        $this->reportService->dismiss($report, $request->user(), $request->resolution_note);
+
+        return $this->successResponse(null, 'Report dismissed.');
     }
 
     public function activityLogs(Request $request): JsonResponse

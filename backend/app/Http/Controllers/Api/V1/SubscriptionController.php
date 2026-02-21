@@ -27,7 +27,17 @@ class SubscriptionController extends Controller
         return $this->successResponse($this->subscriptionService->getPlans());
     }
 
-    /** @authenticated */
+    /**
+     * Initialize Payment
+     *
+     * Start a Paystack payment for a subscription tier upgrade.
+     *
+     * @authenticated
+     * @bodyParam tier string required The subscription tier. Allowed: basic, pro, enterprise. Example: basic
+     *
+     * @response 200 {"success": true, "message": "Payment initialized.", "data": {"authorization_url": "https://paystack.com/pay/...", "access_code": "access_...", "reference": "ref_..."}}
+     * @response 422 {"success": false, "message": "Payment initialization failed."}
+     */
     public function initialize(Request $request): JsonResponse
     {
         $request->validate([
@@ -53,7 +63,17 @@ class SubscriptionController extends Controller
         ], 'Payment initialized.');
     }
 
-    /** @authenticated */
+    /**
+     * Verify Payment
+     *
+     * Verify a Paystack payment and activate the subscription.
+     *
+     * @authenticated
+     * @bodyParam reference string required The Paystack payment reference. Example: ref_abc123
+     *
+     * @response 200 {"success": true, "message": "Subscription activated.", "data": {}}
+     * @response 422 {"success": false, "message": "Payment verification failed or already processed."}
+     */
     public function verify(Request $request): JsonResponse
     {
         $request->validate([

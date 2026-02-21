@@ -176,7 +176,7 @@ class PropertyService
 
             if ($result['url']) {
                 $images[] = $property->images()->create([
-                    'url'                   => $result['url'],
+                    'image_url'             => $result['url'],
                     'thumbnail_url'         => $result['thumbnail_url'] ?? $result['url'],
                     'cloudinary_public_id'  => $result['public_id'],
                     'caption'               => $captions[$index] ?? null,

@@ -195,10 +195,12 @@ Route::prefix('v1')->group(function () {
 
             // Users
             Route::post('/users/ban', [AdminController::class, 'banUser']);
+            Route::post('/users/unban', [AdminController::class, 'unbanUser']);
 
             // Reports
             Route::get('/reports', [AdminController::class, 'reports']);
             Route::post('/reports/{report}/resolve', [AdminController::class, 'resolveReport']);
+            Route::put('/reports/{report}/dismiss', [AdminController::class, 'dismissReport']);
 
             // Activity logs
             Route::get('/activity-logs', [AdminController::class, 'activityLogs']);

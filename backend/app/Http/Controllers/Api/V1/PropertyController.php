@@ -107,7 +107,17 @@ class PropertyController extends Controller
         return response()->json(null, 204);
     }
 
-    /** @authenticated */
+    /**
+     * Upload Property Images
+     *
+     * Upload images for a property listing. Maximum 20 images, 5MB each.
+     *
+     * @authenticated
+     * @bodyParam images file[] required Array of image files. Max 5MB each.
+     * @bodyParam captions string[] Optional captions for each image.
+     *
+     * @response 201 {"success": true, "message": "Images uploaded.", "data": []}
+     */
     public function uploadImages(Request $request, Property $property): JsonResponse
     {
         $request->validate([

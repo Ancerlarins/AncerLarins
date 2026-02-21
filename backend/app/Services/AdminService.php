@@ -138,4 +138,14 @@ class AdminService
 
         $user->tokens()->delete();
     }
+
+    public function unbanUser(User $user): void
+    {
+        $user->update([
+            'status'     => UserStatus::Active,
+            'ban_reason' => null,
+            'banned_at'  => null,
+            'banned_by'  => null,
+        ]);
+    }
 }
