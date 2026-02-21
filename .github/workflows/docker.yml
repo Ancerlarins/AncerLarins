@@ -1,0 +1,29 @@
+name: Docker Build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'deployment/docker/**'
+      - 'backend/**'
+      - 'frontend/**'
+      - '.github/workflows/docker.yml'
+
+jobs:
+  build-backend:
+    name: Build Backend Image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build backend image
+        run: docker build -f deployment/docker/Dockerfile.backend -t ancerlarins-backend:${{ github.sha }} .
+
+  build-frontend:
+    name: Build Frontend Image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build frontend image
+        run: docker build -f deployment/docker/Dockerfile.frontend -t ancerlarins-frontend:${{ github.sha }} .

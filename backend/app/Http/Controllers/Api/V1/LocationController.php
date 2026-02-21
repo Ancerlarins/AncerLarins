@@ -14,6 +14,7 @@ use App\Services\NeighborhoodService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * @group Locations
@@ -31,7 +32,9 @@ class LocationController extends Controller
 
     public function states(): JsonResponse
     {
-        $states = State::active()->orderBy('name')->get(['id', 'name', 'slug']);
+        $states = Cache::remember('locations:states', 3600, function () {
+            return State::active()->orderBy('name')->get(['id', 'name', 'slug']);
+        });
 
         return $this->successResponse($states);
     }
@@ -60,7 +63,9 @@ class LocationController extends Controller
 
     public function citiesByState(State $state): JsonResponse
     {
-        $cities = City::active()->where('state_id', $state->id)->orderBy('name')->get(['id', 'state_id', 'name', 'slug']);
+        $cities = Cache::remember("locations:cities:{$state->id}", 3600, function () use ($state) {
+            return City::active()->where('state_id', $state->id)->orderBy('name')->get(['id', 'state_id', 'name', 'slug']);
+        });
 
         return $this->successResponse($cities);
     }
@@ -74,7 +79,9 @@ class LocationController extends Controller
 
     public function propertyTypes(): JsonResponse
     {
-        $types = PropertyType::orderBy('name')->get(['id', 'name', 'slug']);
+        $types = Cache::remember('locations:property_types', 3600, function () {
+            return PropertyType::orderBy('name')->get(['id', 'name', 'slug']);
+        });
 
         return $this->successResponse($types);
     }
@@ -88,7 +95,9 @@ class LocationController extends Controller
 
     public function areaInsights(Area $area): JsonResponse
     {
-        $insights = $this->neighborhoodService->getAreaInsights($area);
+        $insights = Cache::remember("area_insights:{$area->id}", 900, function () use ($area) {
+            return $this->neighborhoodService->getAreaInsights($area);
+        });
 
         return $this->successResponse($insights);
     }
@@ -112,13 +121,15 @@ class LocationController extends Controller
     public function areaTrends(Area $area, Request $request): JsonResponse
     {
         $listingType = $request->query('listing_type');
+        $cacheKey = "area_trends:{$area->id}:" . ($listingType ?: 'all');
 
-        $trends = $this->marketTrendService->getAreaTrends($area->id, $listingType);
-        $stats = $this->marketTrendService->getAreaStats($area->id, $listingType);
+        $data = Cache::remember($cacheKey, 1800, function () use ($area, $listingType) {
+            return [
+                'trends' => $this->marketTrendService->getAreaTrends($area->id, $listingType),
+                'stats'  => $this->marketTrendService->getAreaStats($area->id, $listingType),
+            ];
+        });
 
-        return $this->successResponse([
-            'trends' => $trends,
-            'stats'  => $stats,
-        ]);
+        return $this->successResponse($data);
     }
 }

@@ -61,6 +61,7 @@ export const propertyApi = baseApi.injectEndpoints({
 
     getSimilarProperties: builder.query<ApiResponse<PropertyListItem[]>, string>({
       query: (id) => `/properties/${id}/similar`,
+      keepUnusedDataFor: 120,
     }),
   }),
 });

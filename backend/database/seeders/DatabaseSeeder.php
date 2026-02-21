@@ -85,6 +85,16 @@ class DatabaseSeeder extends Seeder
             'updated_at' => $now,
         ]);
 
+        // Seed additional Nigerian states
+        $this->call([
+            AbujaSeeder::class,
+            RiversSeeder::class,
+            OyoSeeder::class,
+            DeltaSeeder::class,
+            EnuguSeeder::class,
+            OgunSeeder::class,
+        ]);
+
         // Seed sample data
         $this->call([
             PropertySeeder::class,

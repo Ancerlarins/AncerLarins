@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
         hostname: 'res.cloudinary.com',
       },
     ],
+    formats: ['image/avif', 'image/webp'],
     // In development, skip image optimization to avoid private IP blocking for local backend
     unoptimized: process.env.NODE_ENV === 'development',
   },

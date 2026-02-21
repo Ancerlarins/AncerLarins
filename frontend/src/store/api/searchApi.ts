@@ -23,6 +23,7 @@ export const searchApi = baseApi.injectEndpoints({
         url: '/search/suggestions',
         params: { q },
       }),
+      keepUnusedDataFor: 300,
     }),
 
     getMapProperties: builder.query<ApiResponse<MapProperty[]>, MapBounds & Record<string, unknown>>({
