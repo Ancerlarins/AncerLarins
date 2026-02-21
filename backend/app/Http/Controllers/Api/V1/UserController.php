@@ -39,6 +39,11 @@ class UserController extends Controller
         );
     }
 
+    /**
+     * Update profile
+     *
+     * @response 200 {"success":true,"message":"Profile updated.","data":{"id":"uuid","first_name":"John","last_name":"Doe","email":"john@example.com","phone":"2348012345678","role":"user"}}
+     */
     public function update(UpdateProfileRequest $request): JsonResponse
     {
         $request->user()->update($request->validated());
