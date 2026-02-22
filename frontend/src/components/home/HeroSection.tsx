@@ -248,7 +248,7 @@ export default function HeroSection() {
         className="absolute rounded-full opacity-20 blur-[120px] pointer-events-none transition-opacity duration-1000"
         style={{
           width: 500, height: 500,
-          background: 'radial-gradient(circle, rgba(200,165,92,0.25), transparent 70%)',
+          background: 'radial-gradient(circle, rgba(201,168,76,0.30), transparent 70%)',
           top: '-10%', right: '-5%',
           opacity: loaded ? 0.2 : 0,
         }}

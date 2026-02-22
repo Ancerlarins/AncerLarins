@@ -3,28 +3,28 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  /* Primary - AncerLarins Navy */
-  --color-primary: #0F1D35;
-  --color-primary-dark: #0A1525;
-  --color-primary-light: #1B2A4A;
+  /* Primary - Rich Black */
+  --color-primary: #0A0A0A;
+  --color-primary-dark: #050505;
+  --color-primary-light: #1A1A1A;
 
-  /* Accent - Champagne Gold */
-  --color-accent: #F0D9A0;
-  --color-accent-dark: #A8872F;
-  --color-accent-light: #F5E6C0;
+  /* Accent - Rich Gold */
+  --color-accent: #C9A84C;
+  --color-accent-dark: #B8963E;
+  --color-accent-light: #2A2010;
 
   /* WhatsApp Green */
   --color-whatsapp: #25D366;
 
   /* Backgrounds */
-  --color-background: #FDF8F0;
-  --color-surface: #FFFFFF;
-  --color-border: #E8E4DE;
+  --color-background: #0E0E0E;
+  --color-surface: #171717;
+  --color-border: #2A2A2A;
 
   /* Text */
-  --color-text-primary: #1A1A2E;
-  --color-text-secondary: #4A4A5A;
-  --color-text-muted: #6B6B7B;
+  --color-text-primary: #F0EBE0;
+  --color-text-secondary: #B0A89C;
+  --color-text-muted: #7A7468;
 
   /* Status */
   --color-error: #DC2626;
@@ -34,23 +34,23 @@
   --font-sans: var(--font-inter);
 }
 
-/* Dark mode overrides — soft warm dark (not too black) */
+/* Dark mode overrides — deeper, more intimate */
 .dark {
-  --color-primary: #0F1D35;
-  --color-primary-dark: #0A1525;
-  --color-primary-light: #1B2A4A;
+  --color-primary: #050505;
+  --color-primary-dark: #020202;
+  --color-primary-light: #141414;
 
-  --color-accent: #E8D49A;
+  --color-accent: #D4B15A;
   --color-accent-dark: #C9A84C;
-  --color-accent-light: #3D3420;
+  --color-accent-light: #1F1A0F;
 
-  --color-background: #1A2030;
-  --color-surface: #222B3D;
-  --color-border: #333F54;
+  --color-background: #080808;
+  --color-surface: #111111;
+  --color-border: #1E1E1E;
 
-  --color-text-primary: #ECE8E1;
-  --color-text-secondary: #A8A4A0;
-  --color-text-muted: #908C88;
+  --color-text-primary: #EDE8DD;
+  --color-text-secondary: #9A9288;
+  --color-text-muted: #6B655B;
 
   --color-error: #F87171;
   --color-success: #34D399;

@@ -4,8 +4,8 @@
   "description": "Find apartments, houses and land for rent and sale in Lagos, Nigeria",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#FAFAF5",
-  "theme_color": "#0A2540",
+  "background_color": "#0E0E0E",
+  "theme_color": "#0A0A0A",
   "orientation": "portrait-primary",
   "icons": [
     {

@@ -4,10 +4,11 @@ import { withSentryConfig } from "@sentry/nextjs";
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
-      },
+      { protocol: 'https', hostname: 'res.cloudinary.com' },
+      { protocol: 'https', hostname: 'pictures-nigeria.jijistatic.net' },
+      { protocol: 'https', hostname: 'images.propertypro.ng' },
+      { protocol: 'https', hostname: 'www.propertypro.ng' },
+      { protocol: 'https', hostname: 'images.nigeriapropertycentre.com' },
     ],
     formats: ['image/avif', 'image/webp'],
     // In development, skip image optimization to avoid private IP blocking for local backend
@@ -26,9 +27,9 @@ const nextConfig: NextConfig = {
           "default-src 'self'",
           "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.paystack.co",
           "style-src 'self' 'unsafe-inline'",
-          "img-src 'self' data: blob: https://res.cloudinary.com https://*.tile.openstreetmap.org",
+          "img-src 'self' data: blob: https://res.cloudinary.com https://*.tile.openstreetmap.org https://pictures-nigeria.jijistatic.net https://images.propertypro.ng https://www.propertypro.ng https://images.nigeriapropertycentre.com",
           "font-src 'self' data:",
-          "connect-src 'self' https://*.sentry.io https://wa.me",
+          `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL ? new URL(process.env.NEXT_PUBLIC_API_URL).origin : 'http://localhost:8000'} https://*.sentry.io https://wa.me https://api.paystack.co`,
           "frame-src 'none'",
           "object-src 'none'",
           "base-uri 'self'",

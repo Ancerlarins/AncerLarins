@@ -442,8 +442,8 @@ export default function PropertySearch() {
               }}
               className={`relative flex flex-col items-center px-4 sm:px-7 py-2 sm:py-3 text-[13px] sm:text-sm font-semibold tracking-wide transition-all duration-300 rounded-t-xl sm:rounded-t-2xl flex-shrink-0 ${
                 isActive
-                  ? 'bg-white/85 shadow-sm shadow-primary/[0.04] dark:bg-primary-light/90 dark:shadow-none text-accent-dark backdrop-blur-xl'
-                  : 'bg-white/40 dark:bg-primary-light/30 text-text-muted dark:text-white/60 hover:text-text-secondary dark:hover:text-white/80 hover:bg-white/60 dark:hover:bg-primary-light/50'
+                  ? 'bg-white/[0.08] shadow-sm shadow-primary/[0.04] dark:bg-primary-light/90 dark:shadow-none text-accent-dark backdrop-blur-xl'
+                  : 'bg-white/[0.04] dark:bg-primary-light/30 text-text-muted dark:text-white/60 hover:text-text-secondary dark:hover:text-white/80 hover:bg-white/[0.06] dark:hover:bg-primary-light/50'
               }`}
             >
               <span className="relative z-10">{tab.label}</span>

@@ -634,8 +634,8 @@ export default function Navbar() {
       <nav
         className={`sticky top-0 z-50 motion-safe:transition-all motion-safe:duration-300 ${
           scrolled
-            ? 'bg-[#0F1D35]/85 backdrop-blur-xl border-b border-white/10 shadow-lg'
-            : 'bg-[#0F1D35] border-b border-transparent'
+            ? 'bg-primary/85 backdrop-blur-xl border-b border-white/10 shadow-lg'
+            : 'bg-primary border-b border-transparent'
         }`}
         aria-label="Main navigation"
       >
@@ -768,7 +768,7 @@ export default function Navbar() {
         aria-label="Mobile navigation"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className={`fixed top-0 right-0 h-full w-[85vw] max-w-sm bg-[#0F1D35] z-50 lg:hidden flex flex-col motion-safe:transition-transform motion-safe:duration-300 ease-out ${
+        className={`fixed top-0 right-0 h-full w-[85vw] max-w-sm bg-primary z-50 lg:hidden flex flex-col motion-safe:transition-transform motion-safe:duration-300 ease-out ${
           mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >

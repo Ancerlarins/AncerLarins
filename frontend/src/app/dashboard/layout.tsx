@@ -32,7 +32,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen bg-background">
       {/* Top bar */}
-      <header className="bg-[#0F1D35] border-b border-white/10">
+      <header className="bg-primary border-b border-white/10">
         <div className="container-app flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-1.5">
             <Image src="/images/logo-white.png" alt="AncerLarins" width={32} height={32} className="h-8 w-auto" />

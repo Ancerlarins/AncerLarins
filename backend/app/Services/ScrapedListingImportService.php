@@ -20,6 +20,10 @@ use Illuminate\Support\Str;
 
 class ScrapedListingImportService
 {
+    public function __construct(
+        protected CloudinaryService $cloudinaryService,
+    ) {}
+
     /**
      * Convert an approved scraped listing into a real Property record.
      *
@@ -59,11 +63,18 @@ class ScrapedListingImportService
                 'meta_description' => Str::limit($this->buildDescription($listing), 155),
             ]);
 
-            // Create cover image from scraped image_url
+            // Upload scraped image to Cloudinary, then create cover image
             if ($listing->image_url) {
+                $imageUrl = $listing->image_url;
+
+                $uploaded = $this->cloudinaryService->uploadFromUrl($listing->image_url, 'scraped');
+                if ($uploaded['url']) {
+                    $imageUrl = $uploaded['url'];
+                }
+
                 PropertyImage::create([
                     'property_id'  => $property->id,
-                    'image_url'    => $listing->image_url,
+                    'image_url'    => $imageUrl,
                     'sort_order'   => 0,
                     'is_cover'     => true,
                 ]);

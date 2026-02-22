@@ -33,7 +33,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className="bg-[#0F1D35] text-white/70 relative" role="contentinfo">
+    <footer className="bg-primary text-white/70 relative" role="contentinfo">
       {/* Gold gradient top border */}
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent-dark/50 to-transparent" />
 

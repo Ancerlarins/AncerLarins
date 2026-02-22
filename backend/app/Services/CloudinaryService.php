@@ -63,6 +63,25 @@ class CloudinaryService
         }
     }
 
+    public function uploadFromUrl(string $url, string $folder = 'properties'): array
+    {
+        try {
+            $result = Cloudinary::upload($url, [
+                'folder'        => "ancerlarins/{$folder}",
+                'resource_type' => 'image',
+                'transformation' => ['quality' => 'auto', 'fetch_format' => 'auto'],
+            ]);
+
+            return [
+                'url'       => $result->getSecurePath(),
+                'public_id' => $result->getPublicId(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('Cloudinary upload from URL failed', ['url' => $url, 'error' => $e->getMessage()]);
+            return ['url' => null, 'public_id' => null];
+        }
+    }
+
     public function deleteImage(string $publicId): bool
     {
         try {

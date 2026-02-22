@@ -28,7 +28,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-[#0F1D35] border-b border-white/10">
+      <header className="bg-primary border-b border-white/10">
         <div className="container-app flex items-center justify-between h-16">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-1.5">

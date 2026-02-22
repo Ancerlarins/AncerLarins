@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
-import { createElement } from 'react';
+import { createElement, type ReactNode } from 'react';
 
 afterEach(() => {
   cleanup();
@@ -29,7 +29,7 @@ vi.mock('next/image', () => ({
 
 // Mock Next.js Link component
 vi.mock('next/link', () => ({
-  default: ({ children, ...props }: { children: unknown; [key: string]: unknown }) => {
+  default: ({ children, ...props }: { children: ReactNode; [key: string]: unknown }) => {
     return createElement('a', props, children);
   },
 }));
