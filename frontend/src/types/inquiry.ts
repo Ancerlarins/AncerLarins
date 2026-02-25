@@ -34,6 +34,28 @@ export interface InquiryDetail extends InquiryListItem {
   qualified_at: string | null;
   inspection_at: string | null;
   closed_at: string | null;
+  tracking_ref: string | null;
+  inspection_date: string | null;
+  inspection_time: string | null;
+  inspection_location: string | null;
+  inspection_notes: string | null;
+  agreement_accepted_at: string | null;
+  agreement_ip: string | null;
+  agreement_terms_version: string | null;
+}
+
+export interface InquiryTrackingResult {
+  tracking_ref: string;
+  status: InquiryStatus;
+  status_label: string;
+  property: { title: string; slug: string; formatted_price: string } | null;
+  inspection_date: string | null;
+  inspection_time: string | null;
+  inspection_location: string | null;
+  agreement_accepted: boolean;
+  created_at: string;
+  qualified_at: string | null;
+  inspection_at: string | null;
 }
 
 export interface CreateInquiryPayload {

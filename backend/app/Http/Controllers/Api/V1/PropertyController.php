@@ -76,7 +76,7 @@ class PropertyController extends Controller
             default      => $query->latest('published_at'),
         };
 
-        $properties = $query->paginate($request->integer('per_page', 20));
+        $properties = $query->paginate($request->perPage(20));
 
         return $this->paginatedResponse(
             $properties->setCollection(
@@ -99,6 +99,56 @@ class PropertyController extends Controller
             'source'      => request()->header('Referer'),
             'device_type' => request()->header('X-Device-Type'),
         ]);
+
+        return $this->successResponse(new PropertyDetailResource($property));
+    }
+
+    /**
+     * List the authenticated agent's own properties.
+     *
+     * @authenticated
+     */
+    public function myListings(Request $request): JsonResponse
+    {
+        $agent = $request->user()->agentProfile;
+
+        if (! $agent) {
+            return $this->errorResponse('Agent profile required.', 403);
+        }
+
+        $query = Property::query()
+            ->where('agent_id', $agent->id)
+            ->with(['propertyType', 'state', 'city', 'area', 'images', 'agent.user']);
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        $query->latest();
+
+        $properties = $query->paginate($request->perPage(20));
+
+        return $this->paginatedResponse(
+            $properties->setCollection(
+                $properties->getCollection()->map(fn ($p) => new PropertyListResource($p))
+            )
+        );
+    }
+
+    /**
+     * Show a single property belonging to the authenticated agent.
+     *
+     * @authenticated
+     */
+    public function myPropertyDetail(Request $request, Property $property): JsonResponse
+    {
+        $agent = $request->user()->agentProfile;
+
+        if (! $agent || $property->agent_id !== $agent->id) {
+            return $this->errorResponse('Unauthorized.', 403);
+        }
+
+        $property->load(['propertyType', 'state', 'city', 'area', 'images', 'amenities', 'agent.user', 'virtualTour']);
 
         return $this->successResponse(new PropertyDetailResource($property));
     }
@@ -157,6 +207,8 @@ class PropertyController extends Controller
      */
     public function uploadImages(Request $request, Property $property): JsonResponse
     {
+        set_time_limit(180); // Allow up to 3 minutes for multiple image uploads
+
         $request->validate([
             'images'   => 'required|array|max:20',
             'images.*' => 'image|max:5120',

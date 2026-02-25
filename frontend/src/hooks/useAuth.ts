@@ -5,8 +5,8 @@ import { useCallback } from 'react';
 import type { RootState } from '@/store/store';
 import { setUser, clearUser } from '@/store/slices/authSlice';
 import { useGetMeQuery, useLogoutMutation } from '@/store/api/authApi';
-import { setTokens, clearTokens, isAuthenticated as checkAuth } from '@/lib/auth';
-import type { User, AuthTokens } from '@/types';
+import { isAuthenticated as checkAuth, clearAuthIndicator } from '@/lib/auth';
+import type { User } from '@/types';
 
 export function getRoleRedirect(role?: string): string {
   switch (role) {
@@ -29,9 +29,10 @@ export function useAuth() {
     skip: !checkAuth(),
   });
 
+  // Tokens are now set as httpOnly cookies by the backend response.
+  // The frontend only needs to update Redux state.
   const loginSuccess = useCallback(
-    (userData: User, tokens: AuthTokens) => {
-      setTokens(tokens.access_token, tokens.refresh_token);
+    (userData: User) => {
       dispatch(setUser(userData));
     },
     [dispatch]
@@ -43,7 +44,7 @@ export function useAuth() {
     } catch {
       // Logout even if API fails
     }
-    clearTokens();
+    clearAuthIndicator();
     dispatch(clearUser());
   }, [dispatch, logoutApi]);
 

@@ -1,19 +1,24 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { API_URL } from '@/lib/constants';
-import { getAccessToken, getRefreshToken, setTokens, clearTokens } from '@/lib/auth';
+import { clearAuthIndicator } from '@/lib/auth';
 
+/**
+ * Tokens are stored as httpOnly cookies by the backend.
+ * We send `credentials: 'include'` so the browser attaches them automatically.
+ * No manual Authorization header needed.
+ */
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: API_URL,
+  credentials: 'include',
   prepareHeaders: (headers) => {
-    const token = getAccessToken();
-    if (token) {
-      headers.set('Authorization', `Bearer ${token}`);
-    }
     headers.set('Accept', 'application/json');
     return headers;
   },
 });
+
+let isRefreshing = false;
+let refreshPromise: Promise<boolean> | null = null;
 
 const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (
   args,
@@ -23,31 +28,28 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
   let result = await rawBaseQuery(args, api, extraOptions);
 
   if (result.error && result.error.status === 401) {
-    const refreshToken = getRefreshToken();
+    // Prevent multiple concurrent refresh attempts
+    if (!isRefreshing) {
+      isRefreshing = true;
+      refreshPromise = (async () => {
+        const refreshResult = await rawBaseQuery(
+          { url: '/auth/refresh', method: 'POST' },
+          api,
+          extraOptions
+        );
+        return !!refreshResult.data;
+      })();
+    }
 
-    if (refreshToken) {
-      const refreshResult = await rawBaseQuery(
-        {
-          url: '/auth/refresh',
-          method: 'POST',
-          body: { refresh_token: refreshToken },
-        },
-        api,
-        extraOptions
-      );
+    const refreshed = await refreshPromise;
+    isRefreshing = false;
+    refreshPromise = null;
 
-      if (refreshResult.data) {
-        const data = refreshResult.data as { data: { access_token: string; refresh_token: string } };
-        setTokens(data.data.access_token, data.data.refresh_token);
-        result = await rawBaseQuery(args, api, extraOptions);
-      } else {
-        clearTokens();
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
-        }
-      }
+    if (refreshed) {
+      // Retry the original request — new cookies are set by the refresh response
+      result = await rawBaseQuery(args, api, extraOptions);
     } else {
-      clearTokens();
+      clearAuthIndicator();
       if (typeof window !== 'undefined') {
         window.location.href = '/login';
       }

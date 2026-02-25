@@ -31,6 +31,11 @@ export const adminApi = baseApi.injectEndpoints({
       invalidatesTags: [{ type: 'Property', id: 'LIST' }, { type: 'Property', id: 'ADMIN_LIST' }],
     }),
 
+    deleteProperty: builder.mutation<void, string>({
+      query: (id) => ({ url: `/admin/properties/${id}`, method: 'DELETE' }),
+      invalidatesTags: [{ type: 'Property', id: 'LIST' }, { type: 'Property', id: 'ADMIN_LIST' }],
+    }),
+
     // Agent management
     getAdminAgents: builder.query<PaginatedResponse<AdminAgent>, Record<string, unknown> | void>({
       query: (params) => ({ url: '/admin/agents', params: params || undefined }),
@@ -134,6 +139,7 @@ export const {
   useGetAdminPropertiesQuery,
   useApprovePropertyMutation,
   useRejectPropertyMutation,
+  useDeletePropertyMutation,
   useGetAdminAgentsQuery,
   useVerifyAgentMutation,
   useRejectAgentMutation,

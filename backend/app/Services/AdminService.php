@@ -20,16 +20,39 @@ class AdminService
 
     public function getDashboardStats(): array
     {
+        $weekStart = now()->startOfWeek();
+
+        // Properties grouped by status
+        $propertiesByStatus = [];
+        foreach (PropertyStatus::cases() as $status) {
+            $count = Property::where('status', $status)->count();
+            if ($count > 0) {
+                $propertiesByStatus[$status->value] = $count;
+            }
+        }
+
+        // Agents grouped by verification status
+        $agentsByVerification = [];
+        foreach (VerificationStatus::cases() as $status) {
+            $count = AgentProfile::where('verification_status', $status)->count();
+            if ($count > 0) {
+                $agentsByVerification[$status->value] = $count;
+            }
+        }
+
         return [
-            'total_users'           => User::count(),
-            'total_agents'          => AgentProfile::count(),
-            'total_properties'      => Property::count(),
-            'pending_properties'    => Property::pending()->count(),
-            'pending_agents'        => AgentProfile::pending()->count(),
-            'total_leads'           => Lead::count(),
-            'open_reports'          => Report::open()->count(),
-            'properties_this_month' => Property::where('created_at', '>=', now()->startOfMonth())->count(),
-            'users_this_month'      => User::where('created_at', '>=', now()->startOfMonth())->count(),
+            'total_users'              => User::count(),
+            'total_agents'             => AgentProfile::count(),
+            'total_properties'         => Property::count(),
+            'pending_approvals'        => Property::pending()->count(),
+            'pending_agents'           => AgentProfile::pending()->count(),
+            'total_leads'              => Lead::count(),
+            'leads_this_week'          => Lead::where('created_at', '>=', $weekStart)->count(),
+            'open_reports'             => Report::open()->count(),
+            'properties_by_status'     => $propertiesByStatus,
+            'agents_by_verification'   => $agentsByVerification,
+            'new_listings_this_week'   => Property::where('created_at', '>=', $weekStart)->count(),
+            'new_users_this_week'      => User::where('created_at', '>=', $weekStart)->count(),
         ];
     }
 

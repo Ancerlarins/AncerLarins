@@ -1,3 +1,8 @@
+# ====================================================================
+# DEVELOPMENT ONLY — Do not use in production.
+# For production, use deployment/docker/docker-compose.yml instead.
+# ====================================================================
+
 version: "3.8"
 
 services:
@@ -28,17 +33,18 @@ services:
     image: redis:7-alpine
     container_name: ancerlarins_redis
     restart: unless-stopped
+    command: redis-server --requirepass ancerlarins_redis_secret --appendonly yes
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "ancerlarins_redis_secret", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # pgAdmin for database management
+  # pgAdmin for database management (DEV ONLY — never expose in production)
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: ancerlarins_pgadmin

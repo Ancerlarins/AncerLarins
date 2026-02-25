@@ -42,7 +42,7 @@ class CooperativeController extends Controller
             $query->where('area_id', $request->input('area_id'));
         }
 
-        $cooperatives = $query->paginate($request->input('per_page', 15));
+        $cooperatives = $query->paginate($request->perPage(15));
 
         return $this->paginatedResponse(
             $cooperatives->through(fn ($c) => new CooperativeListResource($c)),
@@ -164,7 +164,7 @@ class CooperativeController extends Controller
         })
             ->with('area')
             ->latest()
-            ->paginate($request->input('per_page', 15));
+            ->paginate($request->perPage(15));
 
         return $this->paginatedResponse(
             $cooperatives->through(fn ($c) => new CooperativeListResource($c)),
@@ -208,7 +208,7 @@ class CooperativeController extends Controller
             $query->where('name', 'ilike', '%' . $request->input('q') . '%');
         }
 
-        $cooperatives = $query->paginate($request->input('per_page', 20));
+        $cooperatives = $query->paginate($request->perPage(20));
 
         return $this->paginatedResponse(
             $cooperatives->through(fn ($c) => new CooperativeListResource($c)),

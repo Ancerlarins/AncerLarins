@@ -23,13 +23,13 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: redis-server --appendonly yes
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
     volumes:
       - redis_data:/data
     ports:
       - "${REDIS_PORT:-6379}:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -50,6 +50,12 @@ services:
         condition: service_healthy
     volumes:
       - backend_storage:/var/www/html/storage
+    healthcheck:
+      test: ["CMD-SHELL", "SCRIPT_NAME=/fpm-ping SCRIPT_FILENAME=/fpm-ping REQUEST_METHOD=GET cgi-fcgi -bind -connect 127.0.0.1:9000 | grep -q pong"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - ancerlarins
 
@@ -120,6 +126,121 @@ services:
     networks:
       - ancerlarins
 
+  # ── Database Backups (daily pg_dump) ───────────────────
+  backup:
+    image: postgis/postgis:16-3.4-alpine
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./backup-db.sh:/usr/local/bin/backup-db.sh:ro
+      - db_backups:/backups
+    entrypoint: "/bin/sh -c 'chmod +x /usr/local/bin/backup-db.sh && /usr/local/bin/backup-db.sh && trap exit TERM; while :; do sleep 86400; /usr/local/bin/backup-db.sh; done'"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-ancerlarins}
+      DB_USERNAME: ${DB_USERNAME:-ancerlarins}
+      DB_PASSWORD: ${DB_PASSWORD}
+      BACKUP_DIR: /backups
+      RETENTION_DAYS: 7
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ancerlarins
+
+  # ── Monitoring: Prometheus ─────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=15d"
+    networks:
+      - ancerlarins
+
+  # ── Monitoring: Grafana ───────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-changeme}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+      - loki
+    networks:
+      - ancerlarins
+
+  # ── Monitoring: Nginx Exporter ────────────────────────
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:latest
+    restart: unless-stopped
+    command:
+      - "--nginx.scrape-uri=http://nginx:80/nginx_status"
+    depends_on:
+      - nginx
+    networks:
+      - ancerlarins
+
+  # ── Monitoring: PostgreSQL Exporter ───────────────────
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${DB_USERNAME:-ancerlarins}:${DB_PASSWORD}@postgres:5432/${DB_DATABASE:-ancerlarins}?sslmode=disable"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ancerlarins
+
+  # ── Monitoring: Redis Exporter ────────────────────────
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    restart: unless-stopped
+    environment:
+      REDIS_ADDR: "redis://redis:6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - ancerlarins
+
+  # ── Logging: Loki ─────────────────────────────────────
+  loki:
+    image: grafana/loki:latest
+    restart: unless-stopped
+    volumes:
+      - ./loki.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - ancerlarins
+
+  # ── Logging: Promtail ────────────────────────────────
+  promtail:
+    image: grafana/promtail:latest
+    restart: unless-stopped
+    volumes:
+      - ./promtail.yml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    networks:
+      - ancerlarins
+
   # ── Certbot (Let's Encrypt) ────────────────────────────
   certbot:
     image: certbot/certbot:latest
@@ -135,8 +256,12 @@ volumes:
   postgres_data:
   redis_data:
   backend_storage:
+  db_backups:
   certbot_www:
   certbot_certs:
+  prometheus_data:
+  grafana_data:
+  loki_data:
 
 networks:
   ancerlarins:

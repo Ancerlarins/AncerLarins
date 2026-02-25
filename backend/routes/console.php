@@ -23,6 +23,18 @@ Schedule::command('areas:refresh-scores')->dailyAt('03:00')->timezone('Africa/La
 // Daily at 3:30am WAT: expire old property requests
 Schedule::command('property-requests:expire')->dailyAt('03:30')->timezone('Africa/Lagos');
 
+// Daily at 12:30am WAT: prune old processed webhook records (older than 30 days)
+Schedule::call(function () {
+    \Illuminate\Support\Facades\DB::table('processed_webhooks')
+        ->where('processed_at', '<', now()->subDays(30))
+        ->delete();
+})->dailyAt('00:30')->timezone('Africa/Lagos');
+
+// Daily at 1am WAT: automated database backup (runs inside scheduler container)
+Schedule::command('db:backup')->dailyAt('01:00')->timezone('Africa/Lagos')
+    ->onOneServer()
+    ->withoutOverlapping();
+
 // Daily at 4am WAT: scrape property listings from external sources
 Schedule::command('scraper:run propertypro --pages=20')->dailyAt('04:00')->timezone('Africa/Lagos');
 Schedule::command('scraper:run nigeriapropertycentre --pages=20')->dailyAt('04:30')->timezone('Africa/Lagos');

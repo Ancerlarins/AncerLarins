@@ -20,14 +20,14 @@ class PropertyRequestListResource extends JsonResource
             'response_count'  => $this->response_count,
             'expires_at'      => $this->expires_at?->toISOString(),
             'area'            => $this->when(
-                $this->relationLoaded('area'),
+                $this->relationLoaded('area') && $this->area,
                 fn () => [
                     'id'   => $this->area->id,
                     'name' => $this->area->name,
                 ]
             ),
             'city'            => $this->when(
-                $this->relationLoaded('city'),
+                $this->relationLoaded('city') && $this->city,
                 fn () => [
                     'id'   => $this->city->id,
                     'name' => $this->city->name,

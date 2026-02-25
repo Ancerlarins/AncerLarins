@@ -35,7 +35,7 @@ class CommissionController extends Controller
         }
 
         $paginator = $query->orderByDesc('created_at')
-            ->paginate($request->integer('per_page', 20));
+            ->paginate($request->perPage(20));
 
         $items = collect($paginator->items())->map(fn (Commission $c) => $this->format($c));
 

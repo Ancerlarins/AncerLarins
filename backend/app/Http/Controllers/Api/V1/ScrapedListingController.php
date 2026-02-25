@@ -32,7 +32,7 @@ class ScrapedListingController extends Controller
             ->when($request->status, fn ($q, $v) => $q->where('status', $v))
             ->when($request->listing_type, fn ($q, $v) => $q->where('listing_type', $v))
             ->latest('created_at')
-            ->paginate($request->integer('per_page', 20));
+            ->paginate($request->perPage(20));
 
         return $this->paginatedResponse(
             $listings->setCollection(

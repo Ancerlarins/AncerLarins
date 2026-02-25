@@ -1,11 +1,11 @@
 import { baseApi } from './baseApi';
 import type { ApiResponse, PaginatedResponse } from '@/types/api';
-import type { InquiryListItem, InquiryDetail, CreateInquiryPayload } from '@/types/inquiry';
+import type { InquiryListItem, InquiryDetail, CreateInquiryPayload, InquiryTrackingResult } from '@/types/inquiry';
 
 export const inquiryApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Public — guest or authenticated
-    submitInquiry: builder.mutation<ApiResponse<{ inquiry_id: string }>, CreateInquiryPayload>({
+    submitInquiry: builder.mutation<ApiResponse<{ inquiry_id: string; tracking_ref: string }>, CreateInquiryPayload>({
       query: (body) => ({
         url: '/inquiries',
         method: 'POST',
@@ -34,7 +34,7 @@ export const inquiryApi = baseApi.injectEndpoints({
       providesTags: (_r, _e, id) => [{ type: 'Inquiry', id }],
     }),
 
-    updateInquiryStatus: builder.mutation<ApiResponse<null>, { id: string; status: string; qualification?: string | null; staff_notes?: string }>({
+    updateInquiryStatus: builder.mutation<ApiResponse<null>, { id: string; status: string; qualification?: string | null; staff_notes?: string; inspection_date?: string; inspection_time?: string; inspection_location?: string }>({
       query: ({ id, ...body }) => ({
         url: `/admin/inquiries/${id}/status`,
         method: 'PUT',
@@ -57,6 +57,24 @@ export const inquiryApi = baseApi.injectEndpoints({
         { type: 'Inquiry', id: 'ADMIN_LIST' },
       ],
     }),
+
+    // Public — buyer inquiry tracking
+    trackInquiry: builder.mutation<ApiResponse<InquiryTrackingResult>, { ref: string; email: string }>({
+      query: (body) => ({
+        url: '/inquiries/track',
+        method: 'POST',
+        body,
+      }),
+    }),
+
+    // Public — buyer agreement acceptance
+    acceptAgreement: builder.mutation<ApiResponse<null>, { ref: string; email: string }>({
+      query: (body) => ({
+        url: '/inquiries/accept-agreement',
+        method: 'POST',
+        body,
+      }),
+    }),
   }),
 });
 
@@ -66,4 +84,6 @@ export const {
   useGetAdminInquiryQuery,
   useUpdateInquiryStatusMutation,
   useAssignInquiryMutation,
+  useTrackInquiryMutation,
+  useAcceptAgreementMutation,
 } = inquiryApi;

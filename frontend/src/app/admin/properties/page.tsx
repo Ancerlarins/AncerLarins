@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useGetAdminPropertiesQuery, useApprovePropertyMutation, useRejectPropertyMutation } from '@/store/api/adminApi';
+import { useGetAdminPropertiesQuery, useApprovePropertyMutation, useRejectPropertyMutation, useDeletePropertyMutation } from '@/store/api/adminApi';
 import { PropertyStatusBadge, VerificationBadge } from '@/components/dashboard/StatusBadge';
 import { formatPrice, formatDate } from '@/lib/utils';
 import type { PropertyStatus } from '@/types';
@@ -24,9 +24,11 @@ export default function AdminPropertiesPage() {
   });
   const [approveProperty, { isLoading: approving }] = useApprovePropertyMutation();
   const [rejectProperty, { isLoading: rejecting }] = useRejectPropertyMutation();
+  const [deleteProperty, { isLoading: deleting }] = useDeletePropertyMutation();
 
   const [rejectModal, setRejectModal] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [deleteModal, setDeleteModal] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const properties = data?.data || [];
@@ -44,6 +46,14 @@ export default function AdminPropertiesPage() {
       await rejectProperty({ property_id: rejectModal, rejection_reason: rejectReason }).unwrap();
       setRejectModal(null);
       setRejectReason('');
+    } catch { /* RTK handles */ }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteModal) return;
+    try {
+      await deleteProperty(deleteModal).unwrap();
+      setDeleteModal(null);
     } catch { /* RTK handles */ }
   };
 
@@ -177,6 +187,12 @@ export default function AdminPropertiesPage() {
                       <Link href={`/properties/${property.slug}`} target="_blank" className="text-xs text-text-muted hover:text-text-primary px-2 py-1">
                         Preview
                       </Link>
+                      <button
+                        onClick={() => setDeleteModal(property.id)}
+                        className="text-xs text-error/60 hover:text-error px-2 py-1"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -211,6 +227,22 @@ export default function AdminPropertiesPage() {
             <div className="flex justify-end gap-3">
               <button onClick={() => { setRejectModal(null); setRejectReason(''); }} className="px-4 py-2 rounded-xl border border-border text-sm text-text-secondary">Cancel</button>
               <button onClick={handleReject} disabled={rejecting || !rejectReason.trim()} className="px-4 py-2 rounded-xl bg-error text-white text-sm font-medium disabled:opacity-50">Reject</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Modal */}
+      {deleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-surface rounded-xl p-6 max-w-md w-full border border-border">
+            <h3 className="font-semibold text-text-primary mb-2">Delete Property</h3>
+            <p className="text-sm text-text-muted mb-6">
+              This will permanently remove this property and all its images. The agent will be notified. This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setDeleteModal(null)} className="px-4 py-2 rounded-xl border border-border text-sm text-text-secondary">Cancel</button>
+              <button onClick={handleDelete} disabled={deleting} className="px-4 py-2 rounded-xl bg-error text-white text-sm font-medium disabled:opacity-50">Delete</button>
             </div>
           </div>
         </div>

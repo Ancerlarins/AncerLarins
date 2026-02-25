@@ -11,6 +11,7 @@ use App\Services\AuthService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Cookie;
 
 /**
  * @group Authentication
@@ -55,7 +56,13 @@ class AuthController extends Controller
             $response['refresh_token'] = $result['refresh_token'];
         }
 
-        return $this->successResponse($response, 'Phone verified successfully.');
+        $jsonResponse = $this->successResponse($response, 'Phone verified successfully.');
+
+        if (isset($result['access_token'])) {
+            $this->attachAuthCookies($jsonResponse, $result['access_token'], $result['refresh_token']);
+        }
+
+        return $jsonResponse;
     }
 
     public function login(LoginRequest $request): JsonResponse
@@ -93,33 +100,96 @@ class AuthController extends Controller
      * Refresh Token
      *
      * Exchange a refresh token for new access and refresh tokens.
-     *
-     * @bodyParam refresh_token string required The refresh token. Example: eyJ0eXAiOiJKV1Q...
-     *
-     * @response 200 {"success": true, "message": "Token refreshed.", "data": {"access_token": "1|abc...", "refresh_token": "eyJ..."}}
-     * @response 401 {"success": false, "message": "Invalid refresh token."}
+     * Reads the refresh_token from the httpOnly cookie, or falls back
+     * to the request body for backwards compatibility.
      */
     public function refresh(Request $request): JsonResponse
     {
-        $request->validate(['refresh_token' => 'required|string']);
+        $refreshToken = $request->cookie('refresh_token') ?? $request->input('refresh_token');
 
-        $result = $this->authService->refreshToken($request->refresh_token);
-
-        if (! $result) {
-            return $this->errorResponse('Invalid refresh token.', 401);
+        if (! $refreshToken) {
+            return $this->errorResponse('Refresh token is required.', 422);
         }
 
-        return $this->successResponse([
+        $result = $this->authService->refreshToken($refreshToken);
+
+        if (! $result) {
+            $jsonResponse = $this->errorResponse('Invalid refresh token.', 401);
+            $this->clearAuthCookies($jsonResponse);
+
+            return $jsonResponse;
+        }
+
+        $jsonResponse = $this->successResponse([
             'access_token'  => $result['access_token'],
             'refresh_token' => $result['refresh_token'],
         ], 'Token refreshed.');
+
+        $this->attachAuthCookies($jsonResponse, $result['access_token'], $result['refresh_token']);
+
+        return $jsonResponse;
     }
 
     public function logout(Request $request): JsonResponse
     {
         $this->authService->logout($request->user());
 
-        return $this->successResponse(null, 'Logged out.');
+        $jsonResponse = $this->successResponse(null, 'Logged out.');
+        $this->clearAuthCookies($jsonResponse);
+
+        return $jsonResponse;
     }
 
+    // ── Cookie helpers ──────────────────────────────────
+
+    private function attachAuthCookies(JsonResponse $response, string $accessToken, string $refreshToken): void
+    {
+        $secure = app()->environment('production');
+        $domain = config('session.domain');
+
+        // httpOnly access token — 24 hours
+        $response->withCookie(new Cookie(
+            name:     'access_token',
+            value:    $accessToken,
+            expire:   now()->addDay(),
+            path:     '/',
+            domain:   $domain,
+            secure:   $secure,
+            httpOnly: true,
+            sameSite: 'lax',
+        ));
+
+        // httpOnly refresh token — 30 days
+        $response->withCookie(new Cookie(
+            name:     'refresh_token',
+            value:    $refreshToken,
+            expire:   now()->addDays(30),
+            path:     '/',
+            domain:   $domain,
+            secure:   $secure,
+            httpOnly: true,
+            sameSite: 'lax',
+        ));
+
+        // Non-httpOnly indicator so the frontend knows auth state
+        $response->withCookie(new Cookie(
+            name:     'is_logged_in',
+            value:    '1',
+            expire:   now()->addDays(30),
+            path:     '/',
+            domain:   $domain,
+            secure:   $secure,
+            httpOnly: false,
+            sameSite: 'lax',
+        ));
+    }
+
+    private function clearAuthCookies(JsonResponse $response): void
+    {
+        $domain = config('session.domain');
+
+        $response->withCookie(Cookie::create('access_token')->withPath('/')->withDomain($domain)->withExpires(0));
+        $response->withCookie(Cookie::create('refresh_token')->withPath('/')->withDomain($domain)->withExpires(0));
+        $response->withCookie(Cookie::create('is_logged_in')->withPath('/')->withDomain($domain)->withExpires(0));
+    }
 }

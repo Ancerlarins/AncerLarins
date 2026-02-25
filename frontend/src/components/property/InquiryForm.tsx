@@ -1,11 +1,15 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useSubmitInquiryMutation } from '@/store/api/inquiryApi';
 import { useSavePropertyMutation } from '@/store/api/propertyApi';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/Toast';
 import { getLeadSource, formatPrice } from '@/lib/utils';
+import { inquirySchema, inquirySchemaAuthenticated } from '@/lib/schemas/inquiry';
+import type { InquiryFormData } from '@/lib/schemas/inquiry';
 import type { PropertyDetail } from '@/types';
 
 interface InquiryFormProps {
@@ -38,46 +42,40 @@ export default function InquiryForm({ property }: InquiryFormProps) {
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [trackingRef, setTrackingRef] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const [formData, setFormData] = useState({
-    full_name: user?.first_name ? `${user.first_name} ${user.last_name}` : '',
-    email: user?.email || '',
-    phone: user?.phone || '',
-    budget_range: '',
-    timeline: '',
-    financing_type: '',
-    message: '',
+  const schema = user ? inquirySchemaAuthenticated : inquirySchema;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { register, handleSubmit, formState: { errors } } = useForm<InquiryFormData>({
+    resolver: zodResolver(schema) as any,
+    defaultValues: {
+      full_name: user?.first_name ? `${user.first_name} ${user.last_name}` : '',
+      email: user?.email || '',
+      phone: user?.phone || '',
+      budget_range: '',
+      timeline: '',
+      financing_type: '',
+      message: '',
+    },
   });
 
-  const updateField = useCallback((field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  }, []);
-
-  const handleSubmit = useCallback(async (e?: React.FormEvent) => {
-    e?.preventDefault();
+  const onSubmit = useCallback(async (data: InquiryFormData) => {
     if (loading || !property.id) return;
-
-    // Basic validation for guests
-    if (!user) {
-      if (!formData.full_name.trim()) { toast('Please enter your name', 'error'); return; }
-      if (!formData.email.trim()) { toast('Please enter your email', 'error'); return; }
-      if (!formData.phone.trim()) { toast('Please enter your phone number', 'error'); return; }
-    }
-
     setLoading(true);
     try {
-      await submitInquiry({
+      const res = await submitInquiry({
         property_id: property.id,
-        full_name: formData.full_name || undefined,
-        email: formData.email || undefined,
-        phone: formData.phone || undefined,
-        budget_range: formData.budget_range || undefined,
-        timeline: formData.timeline || undefined,
-        financing_type: formData.financing_type || undefined,
-        message: formData.message || undefined,
+        full_name: data.full_name || undefined,
+        email: data.email || undefined,
+        phone: data.phone || undefined,
+        budget_range: data.budget_range || undefined,
+        timeline: data.timeline || undefined,
+        financing_type: data.financing_type || undefined,
+        message: data.message || undefined,
         source: getLeadSource(),
       }).unwrap();
+      setTrackingRef(res.data.tracking_ref || '');
       setSubmitted(true);
       setMobileOpen(false);
     } catch {
@@ -85,50 +83,31 @@ export default function InquiryForm({ property }: InquiryFormProps) {
     } finally {
       setLoading(false);
     }
-  }, [submitInquiry, property.id, formData, user, loading, toast]);
+  }, [submitInquiry, property.id, loading, toast]);
+
+  const inputClass = 'w-full px-3 py-2.5 rounded-lg border border-border bg-background text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent-dark/30 focus:border-accent-dark';
+  const errorClass = 'text-xs text-error mt-0.5';
 
   const formFields = (
     <>
       <div>
         <label className="block text-xs font-medium text-text-muted mb-1">Full Name *</label>
-        <input
-          type="text"
-          value={formData.full_name}
-          onChange={(e) => updateField('full_name', e.target.value)}
-          placeholder="Your full name"
-          className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent-dark/30 focus:border-accent-dark"
-          required
-        />
+        <input type="text" {...register('full_name')} placeholder="Your full name" className={inputClass} />
+        {errors.full_name && <p className={errorClass}>{errors.full_name.message}</p>}
       </div>
       <div>
         <label className="block text-xs font-medium text-text-muted mb-1">Phone *</label>
-        <input
-          type="tel"
-          value={formData.phone}
-          onChange={(e) => updateField('phone', e.target.value)}
-          placeholder="08012345678"
-          className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent-dark/30 focus:border-accent-dark"
-          required
-        />
+        <input type="tel" {...register('phone')} placeholder="08012345678" className={inputClass} />
+        {errors.phone && <p className={errorClass}>{errors.phone.message}</p>}
       </div>
       <div>
         <label className="block text-xs font-medium text-text-muted mb-1">Email *</label>
-        <input
-          type="email"
-          value={formData.email}
-          onChange={(e) => updateField('email', e.target.value)}
-          placeholder="you@example.com"
-          className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent-dark/30 focus:border-accent-dark"
-          required
-        />
+        <input type="email" {...register('email')} placeholder="you@example.com" className={inputClass} />
+        {errors.email && <p className={errorClass}>{errors.email.message}</p>}
       </div>
       <div>
         <label className="block text-xs font-medium text-text-muted mb-1">Budget Range</label>
-        <select
-          value={formData.budget_range}
-          onChange={(e) => updateField('budget_range', e.target.value)}
-          className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent-dark/30 focus:border-accent-dark"
-        >
+        <select {...register('budget_range')} className={inputClass}>
           {BUDGET_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
@@ -136,11 +115,7 @@ export default function InquiryForm({ property }: InquiryFormProps) {
       </div>
       <div>
         <label className="block text-xs font-medium text-text-muted mb-1">Timeline</label>
-        <select
-          value={formData.timeline}
-          onChange={(e) => updateField('timeline', e.target.value)}
-          className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent-dark/30 focus:border-accent-dark"
-        >
+        <select {...register('timeline')} className={inputClass}>
           {TIMELINE_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
@@ -151,14 +126,7 @@ export default function InquiryForm({ property }: InquiryFormProps) {
         <div className="flex gap-3">
           {(['cash', 'mortgage', 'undecided'] as const).map((opt) => (
             <label key={opt} className="flex items-center gap-1.5 cursor-pointer">
-              <input
-                type="radio"
-                name="financing_type"
-                value={opt}
-                checked={formData.financing_type === opt}
-                onChange={(e) => updateField('financing_type', e.target.value)}
-                className="accent-accent-dark"
-              />
+              <input type="radio" value={opt} {...register('financing_type')} className="accent-accent-dark" />
               <span className="text-sm text-text-secondary capitalize">{opt}</span>
             </label>
           ))}
@@ -167,13 +135,13 @@ export default function InquiryForm({ property }: InquiryFormProps) {
       <div>
         <label className="block text-xs font-medium text-text-muted mb-1">Message (optional)</label>
         <textarea
-          value={formData.message}
-          onChange={(e) => updateField('message', e.target.value)}
+          {...register('message')}
           placeholder="Any questions or preferences..."
           rows={3}
           maxLength={1000}
-          className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent-dark/30 focus:border-accent-dark resize-none"
+          className={`${inputClass} resize-none`}
         />
+        {errors.message && <p className={errorClass}>{errors.message.message}</p>}
       </div>
     </>
   );
@@ -186,7 +154,16 @@ export default function InquiryForm({ property }: InquiryFormProps) {
         </svg>
       </div>
       <h3 className="text-lg font-semibold text-text-primary mb-2">Thank You!</h3>
-      <p className="text-sm text-text-muted">Our team will call you within 2 hours to arrange your private viewing.</p>
+      <p className="text-sm text-text-muted mb-4">Our team will call you within 2 hours to arrange your private viewing.</p>
+      {trackingRef && (
+        <div className="bg-background border border-border rounded-lg p-3">
+          <p className="text-xs text-text-muted mb-1">Your tracking reference</p>
+          <p className="text-lg font-mono font-bold text-accent tracking-wider">{trackingRef}</p>
+          <a href={`/track-inquiry?ref=${trackingRef}`} className="text-xs text-accent hover:underline mt-1 inline-block">
+            Track your inquiry status
+          </a>
+        </div>
+      )}
     </div>
   );
 
@@ -208,7 +185,7 @@ export default function InquiryForm({ property }: InquiryFormProps) {
                 <h3 className="font-semibold text-text-primary">Request Private Viewing</h3>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-3">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
                 {formFields}
                 <button
                   type="submit"
@@ -298,7 +275,7 @@ export default function InquiryForm({ property }: InquiryFormProps) {
                 <p className="text-lg font-bold text-accent-dark">{formatPrice(property.price_kobo)}</p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-3">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
                 {formFields}
                 <button
                   type="submit"

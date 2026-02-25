@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useCreatePropertyRequestMutation } from '@/store/api/requestApi';
-import type { CreatePropertyRequestPayload } from '@/types/request';
+import { propertyRequestSchema, type PropertyRequestFormData } from '@/lib/schemas/property-request';
 import type { ListingType } from '@/types';
 
 interface Props {
@@ -18,24 +20,24 @@ const LISTING_TYPES: { value: ListingType; label: string }[] = [
 
 export default function CreateRequestForm({ onSuccess, onCancel }: Props) {
   const [createRequest, { isLoading }] = useCreatePropertyRequestMutation();
-  const [error, setError] = useState('');
+  const [apiError, setApiError] = useState('');
 
-  const [form, setForm] = useState<CreatePropertyRequestPayload>({
-    title: '',
-    description: '',
-    listing_type: 'rent',
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<PropertyRequestFormData>({
+    resolver: zodResolver(propertyRequestSchema) as any,
+    defaultValues: {
+      title: '',
+      description: '',
+      listing_type: 'rent',
+    },
   });
 
-  const update = (field: string, value: unknown) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
+  const listingType = watch('listing_type');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    // Clean up empty optional fields
-    const payload = { ...form };
+  const onSubmit = async (data: PropertyRequestFormData) => {
+    setApiError('');
+    // Strip empty optional fields
+    const payload = { ...data };
     if (!payload.min_bedrooms) delete payload.min_bedrooms;
     if (!payload.max_bedrooms) delete payload.max_bedrooms;
     if (!payload.budget_kobo) delete payload.budget_kobo;
@@ -45,19 +47,20 @@ export default function CreateRequestForm({ onSuccess, onCancel }: Props) {
       await createRequest(payload).unwrap();
       onSuccess?.();
     } catch (err: unknown) {
-      const apiError = err as { data?: { message?: string } };
-      setError(apiError?.data?.message || 'Failed to create request.');
+      const e = err as { data?: { message?: string } };
+      setApiError(e?.data?.message || 'Failed to create request.');
     }
   };
 
   const inputClass =
     'w-full px-4 py-2.5 rounded-xl bg-surface border border-border text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent/50';
+  const errorClass = 'text-xs text-error mt-0.5';
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {error && (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      {apiError && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
-          {error}
+          {apiError}
         </div>
       )}
 
@@ -66,25 +69,23 @@ export default function CreateRequestForm({ onSuccess, onCancel }: Props) {
         <label className="block text-sm font-medium text-text-primary mb-1.5">Title *</label>
         <input
           type="text"
-          value={form.title}
-          onChange={(e) => update('title', e.target.value)}
+          {...register('title')}
           placeholder="e.g. Looking for 2-bed apartment in Lekki"
           className={inputClass}
-          required
         />
+        {errors.title && <p className={errorClass}>{errors.title.message}</p>}
       </div>
 
       {/* Description */}
       <div>
         <label className="block text-sm font-medium text-text-primary mb-1.5">Description *</label>
         <textarea
-          value={form.description}
-          onChange={(e) => update('description', e.target.value)}
+          {...register('description')}
           placeholder="Describe what you're looking for in detail..."
           rows={4}
           className={inputClass}
-          required
         />
+        {errors.description && <p className={errorClass}>{errors.description.message}</p>}
       </div>
 
       {/* Listing Type */}
@@ -95,9 +96,9 @@ export default function CreateRequestForm({ onSuccess, onCancel }: Props) {
             <button
               key={t.value}
               type="button"
-              onClick={() => update('listing_type', t.value)}
+              onClick={() => setValue('listing_type', t.value, { shouldValidate: true })}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                form.listing_type === t.value
+                listingType === t.value
                   ? 'bg-primary text-white'
                   : 'bg-surface border border-border text-text-secondary hover:bg-background'
               }`}
@@ -116,10 +117,10 @@ export default function CreateRequestForm({ onSuccess, onCancel }: Props) {
             type="number"
             min={0}
             max={20}
-            value={form.min_bedrooms || ''}
-            onChange={(e) => update('min_bedrooms', e.target.value ? Number(e.target.value) : undefined)}
+            {...register('min_bedrooms')}
             className={inputClass}
           />
+          {errors.min_bedrooms && <p className={errorClass}>{errors.min_bedrooms.message}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-text-primary mb-1.5">Max Bedrooms</label>
@@ -127,18 +128,19 @@ export default function CreateRequestForm({ onSuccess, onCancel }: Props) {
             type="number"
             min={0}
             max={20}
-            value={form.max_bedrooms || ''}
-            onChange={(e) => update('max_bedrooms', e.target.value ? Number(e.target.value) : undefined)}
+            {...register('max_bedrooms')}
             className={inputClass}
           />
+          {errors.max_bedrooms && <p className={errorClass}>{errors.max_bedrooms.message}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-text-primary mb-1.5">Budget (₦)</label>
           <input
             type="number"
             min={0}
-            value={form.budget_kobo ? form.budget_kobo / 100 : ''}
-            onChange={(e) => update('budget_kobo', e.target.value ? Number(e.target.value) * 100 : undefined)}
+            {...register('budget_kobo', {
+              setValueAs: (v) => (v ? Number(v) * 100 : undefined),
+            })}
             placeholder="e.g. 2000000"
             className={inputClass}
           />
@@ -150,8 +152,7 @@ export default function CreateRequestForm({ onSuccess, onCancel }: Props) {
         <label className="block text-sm font-medium text-text-primary mb-1.5">Preferred Move-in Date</label>
         <input
           type="date"
-          value={form.move_in_date || ''}
-          onChange={(e) => update('move_in_date', e.target.value || undefined)}
+          {...register('move_in_date')}
           className={inputClass}
         />
       </div>

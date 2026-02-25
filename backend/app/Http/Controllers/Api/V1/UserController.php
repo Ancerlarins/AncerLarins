@@ -60,7 +60,7 @@ class UserController extends Controller
             ->savedProperties()
             ->with(['property.propertyType', 'property.city', 'property.images', 'property.agent.user'])
             ->latest('created_at')
-            ->paginate(20);
+            ->paginate($request->perPage(20));
 
         $items = $saved->getCollection()->map(fn ($s) => new PropertyListResource($s->property));
 
@@ -101,7 +101,7 @@ class UserController extends Controller
         $notifications = $request->user()
             ->notifications()
             ->latest('created_at')
-            ->paginate($request->integer('per_page', 20));
+            ->paginate($request->perPage(20));
 
         return $this->paginatedResponse(
             $notifications->setCollection(

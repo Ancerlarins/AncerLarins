@@ -2,24 +2,30 @@
 
 namespace App\Services;
 
-use Cloudinary\Asset\Image;
-use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use Cloudinary\Cloudinary;
 use Illuminate\Support\Facades\Log;
 
 class CloudinaryService
 {
+    protected Cloudinary $cloudinary;
+
+    public function __construct()
+    {
+        $this->cloudinary = app(Cloudinary::class);
+    }
+
     public function uploadImage($file, string $folder = 'properties'): array
     {
         try {
-            $result = Cloudinary::upload($file->getRealPath(), [
+            $result = $this->cloudinary->uploadApi()->upload($file->getRealPath(), [
                 'folder'        => "ancerlarins/{$folder}",
                 'resource_type' => 'image',
                 'transformation' => ['quality' => 'auto', 'fetch_format' => 'auto'],
             ]);
 
             return [
-                'url'       => $result->getSecurePath(),
-                'public_id' => $result->getPublicId(),
+                'url'       => $result['secure_url'],
+                'public_id' => $result['public_id'],
             ];
         } catch (\Exception $e) {
             Log::error('Cloudinary upload failed', ['error' => $e->getMessage()]);
@@ -30,15 +36,15 @@ class CloudinaryService
     public function uploadPrivate($file, string $folder = 'verification'): array
     {
         try {
-            $result = Cloudinary::upload($file->getRealPath(), [
+            $result = $this->cloudinary->uploadApi()->upload($file->getRealPath(), [
                 'folder'         => "ancerlarins/{$folder}",
                 'resource_type'  => 'auto',
                 'type'           => 'authenticated',
             ]);
 
             return [
-                'url'       => $result->getSecurePath(),
-                'public_id' => $result->getPublicId(),
+                'url'       => $result['secure_url'],
+                'public_id' => $result['public_id'],
             ];
         } catch (\Exception $e) {
             Log::error('Cloudinary private upload failed', ['error' => $e->getMessage()]);
@@ -49,7 +55,7 @@ class CloudinaryService
     public function getSignedUrl(string $publicId): ?string
     {
         try {
-            $url = (string) Image::authenticated($publicId)
+            $url = (string) $this->cloudinary->image($publicId)
                 ->signUrl()
                 ->toUrl();
 
@@ -66,15 +72,15 @@ class CloudinaryService
     public function uploadFromUrl(string $url, string $folder = 'properties'): array
     {
         try {
-            $result = Cloudinary::upload($url, [
+            $result = $this->cloudinary->uploadApi()->upload($url, [
                 'folder'        => "ancerlarins/{$folder}",
                 'resource_type' => 'image',
                 'transformation' => ['quality' => 'auto', 'fetch_format' => 'auto'],
             ]);
 
             return [
-                'url'       => $result->getSecurePath(),
-                'public_id' => $result->getPublicId(),
+                'url'       => $result['secure_url'],
+                'public_id' => $result['public_id'],
             ];
         } catch (\Exception $e) {
             Log::error('Cloudinary upload from URL failed', ['url' => $url, 'error' => $e->getMessage()]);
@@ -85,7 +91,7 @@ class CloudinaryService
     public function deleteImage(string $publicId): bool
     {
         try {
-            Cloudinary::destroy($publicId);
+            $this->cloudinary->uploadApi()->destroy($publicId);
             return true;
         } catch (\Exception $e) {
             Log::error('Cloudinary delete failed', ['error' => $e->getMessage()]);

@@ -20,6 +20,7 @@ use App\Models\Report;
 use App\Models\User;
 use App\Services\AdminService;
 use App\Services\AgentService;
+use App\Services\PropertyService;
 use App\Services\ReportService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -39,6 +40,7 @@ class AdminController extends Controller
         protected AdminService $adminService,
         protected AgentService $agentService,
         protected ReportService $reportService,
+        protected PropertyService $propertyService,
     ) {}
 
     public function dashboard(): JsonResponse
@@ -48,13 +50,33 @@ class AdminController extends Controller
         return $this->successResponse(new DashboardStatsResource($stats));
     }
 
+    public function adminProperties(Request $request): JsonResponse
+    {
+        $query = Property::query()
+            ->with(['propertyType', 'city', 'area', 'agent.user', 'images'])
+            ->withCount('reports')
+            ->latest();
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        $properties = $query->paginate($request->perPage(20));
+
+        return $this->paginatedResponse(
+            $properties->setCollection(
+                $properties->getCollection()->map(fn ($p) => new AdminPropertyResource($p))
+            )
+        );
+    }
+
     public function pendingProperties(Request $request): JsonResponse
     {
         $properties = Property::pending()
             ->with(['propertyType', 'city', 'area', 'agent.user', 'images'])
             ->withCount('reports')
             ->latest()
-            ->paginate($request->integer('per_page', 20));
+            ->paginate($request->perPage(20));
 
         return $this->paginatedResponse(
             $properties->setCollection(
@@ -108,12 +130,19 @@ class AdminController extends Controller
         return $this->successResponse(null, 'Property featured.');
     }
 
+    public function destroyProperty(Property $property): JsonResponse
+    {
+        $this->propertyService->delete($property);
+
+        return response()->json(null, 204);
+    }
+
     public function pendingAgents(Request $request): JsonResponse
     {
         $agents = AgentProfile::pending()
             ->with('user')
             ->latest()
-            ->paginate($request->integer('per_page', 20));
+            ->paginate($request->perPage(20));
 
         return $this->paginatedResponse(
             $agents->setCollection(
@@ -167,7 +196,7 @@ class AdminController extends Controller
         $reports = Report::with(['reporter', 'reportable', 'resolvedByUser'])
             ->when($request->status, fn ($q, $s) => $q->where('status', $s))
             ->latest('created_at')
-            ->paginate($request->integer('per_page', 20));
+            ->paginate($request->perPage(20));
 
         return $this->paginatedResponse($reports);
     }
@@ -217,7 +246,7 @@ class AdminController extends Controller
             ->when($request->date_from, fn ($q, $v) => $q->where('created_at', '>=', $v))
             ->when($request->date_to, fn ($q, $v) => $q->where('created_at', '<=', $v))
             ->latest('created_at')
-            ->paginate($request->integer('per_page', 50));
+            ->paginate($request->perPage(50));
 
         return $this->paginatedResponse(
             $logs->setCollection(

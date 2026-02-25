@@ -80,6 +80,70 @@ class LeadService
         return "https://wa.me/{$phone}?text=" . urlencode($message);
     }
 
+    /**
+     * Create a lead from the inquiry form with smart staff assignment.
+     *
+     * High-value properties (>=₦300M) are routed to super_admin first.
+     * All others use round-robin across admin/super_admin staff with the
+     * fewest active (non-closed) leads.
+     *
+     * @return array{lead: Lead, assigned_to: ?User}
+     */
+    public function createFromInquiry(array $data, Property $property, ?User $user): array
+    {
+        $leadData = [
+            'property_id'    => $property->id,
+            'agent_id'       => $property->agent_id,
+            'user_id'        => $user?->id,
+            'contact_type'   => 'form',
+            'full_name'      => $data['full_name'] ?? $user?->full_name,
+            'email'          => $data['email'] ?? $user?->email,
+            'phone'          => $data['phone'] ?? $user?->phone,
+            'budget_range'   => $data['budget_range'] ?? null,
+            'timeline'       => $data['timeline'] ?? null,
+            'financing_type' => $data['financing_type'] ?? null,
+            'message'        => $data['message'] ?? null,
+            'source'         => $data['source'] ?? null,
+            'status'         => 'new',
+        ];
+
+        $staffMember = $this->assignStaff($property);
+
+        if ($staffMember) {
+            $leadData['assigned_to'] = $staffMember->id;
+        }
+
+        $lead = Lead::create($leadData);
+
+        // Increment counters
+        $property->increment('contact_count');
+        if ($property->agent) {
+            $property->agent->increment('total_leads');
+        }
+
+        return ['lead' => $lead, 'assigned_to' => $staffMember];
+    }
+
+    /**
+     * Determine which staff member should be assigned a new lead.
+     */
+    protected function assignStaff(Property $property): ?User
+    {
+        $highValueThreshold = 30_000_000_000; // ₦300M in kobo
+        $isHighValue = $property->price_kobo >= $highValueThreshold;
+
+        $staffQuery = User::where('status', 'active')
+            ->withCount(['assignedInquiries' => fn ($q) => $q->whereNotIn('status', ['closed_won', 'closed_lost'])])
+            ->orderBy('assigned_inquiries_count', 'asc');
+
+        if ($isHighValue) {
+            return (clone $staffQuery)->where('role', 'super_admin')->first()
+                ?? $staffQuery->whereIn('role', ['admin', 'super_admin'])->first();
+        }
+
+        return $staffQuery->whereIn('role', ['admin', 'super_admin'])->first();
+    }
+
     public function markResponded(Lead $lead): void
     {
         $lead->markResponded();

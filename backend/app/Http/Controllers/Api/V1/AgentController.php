@@ -41,7 +41,7 @@ class AgentController extends Controller
             ->verified()
             ->with('user')
             ->orderByDesc('avg_rating')
-            ->paginate($request->integer('per_page', 20));
+            ->paginate($request->perPage(20));
 
         return $this->paginatedResponse(
             $agents->setCollection(
@@ -63,7 +63,7 @@ class AgentController extends Controller
             ->approved()
             ->with(['propertyType', 'city', 'images', 'agent.user'])
             ->latest()
-            ->paginate($request->integer('per_page', 20));
+            ->paginate($request->perPage(20));
 
         return $this->paginatedResponse(
             $properties->setCollection(
@@ -78,7 +78,7 @@ class AgentController extends Controller
             ->approved()
             ->with('user')
             ->latest()
-            ->paginate($request->integer('per_page', 20));
+            ->paginate($request->perPage(20));
 
         return $this->paginatedResponse(
             $reviews->setCollection(
@@ -179,7 +179,7 @@ class AgentController extends Controller
         $leads = $agent->leads()
             ->with(['property.images', 'user'])
             ->latest('created_at')
-            ->paginate($request->integer('per_page', 20));
+            ->paginate($request->perPage(20));
 
         return $this->paginatedResponse(
             $leads->setCollection(

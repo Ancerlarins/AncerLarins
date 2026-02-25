@@ -53,7 +53,7 @@ class PropertyRequestController extends Controller
             $query->where('city_id', $request->input('city_id'));
         }
 
-        $requests = $query->paginate($request->input('per_page', 15));
+        $requests = $query->paginate($request->perPage(15));
 
         return $this->paginatedResponse(
             $requests->through(fn ($r) => new PropertyRequestListResource($r)),
@@ -69,7 +69,7 @@ class PropertyRequestController extends Controller
         $requests = PropertyRequest::where('user_id', $request->user()->id)
             ->with(['area', 'city', 'propertyType'])
             ->latest()
-            ->paginate($request->input('per_page', 15));
+            ->paginate($request->perPage(15));
 
         return $this->paginatedResponse(
             $requests->through(fn ($r) => new PropertyRequestListResource($r)),
@@ -210,7 +210,7 @@ class PropertyRequestController extends Controller
             $query->where('title', 'ilike', '%' . $request->input('q') . '%');
         }
 
-        $requests = $query->paginate($request->input('per_page', 20));
+        $requests = $query->paginate($request->perPage(20));
 
         return $this->paginatedResponse(
             $requests->through(fn ($r) => new PropertyRequestListResource($r)),

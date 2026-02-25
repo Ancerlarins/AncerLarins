@@ -52,6 +52,22 @@ class AdminPropertyResource extends JsonResource
                     'is_verified'  => $this->agent->isVerified(),
                 ] : null
             ),
+            'agent_detail' => $this->when(
+                $this->relationLoaded('agent'),
+                fn () => $this->agent ? [
+                    'id'                  => $this->agent->id,
+                    'company_name'        => $this->agent->company_name,
+                    'user_name'           => $this->agent->user?->full_name,
+                    'verification_status' => $this->agent->verification_status?->value,
+                ] : null
+            ),
+            'cover_image' => $this->when(
+                $this->relationLoaded('images'),
+                fn () => $this->coverImage ? [
+                    'url'           => $this->coverImage->url,
+                    'thumbnail_url' => $this->coverImage->thumbnail_url,
+                ] : null
+            ),
             'images' => $this->when(
                 $this->relationLoaded('images'),
                 fn () => $this->images->map(fn ($img) => [
@@ -61,6 +77,7 @@ class AdminPropertyResource extends JsonResource
                     'is_cover'      => $img->is_cover,
                 ])
             ),
+            'fraud_score'  => $this->fraud_score,
             'report_count' => $this->when(isset($this->reports_count), $this->reports_count),
             'approved_by'  => $this->approved_by,
             'approved_at'  => $this->approved_at?->toISOString(),

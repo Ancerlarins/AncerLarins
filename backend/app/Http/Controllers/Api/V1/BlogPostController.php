@@ -47,7 +47,7 @@ class BlogPostController extends Controller
             $query->search($request->input('q'));
         }
 
-        $posts = $query->paginate($request->input('per_page', 12));
+        $posts = $query->paginate($request->perPage(12));
 
         return $this->paginatedResponse(
             $posts->through(fn ($post) => new BlogPostListResource($post)),

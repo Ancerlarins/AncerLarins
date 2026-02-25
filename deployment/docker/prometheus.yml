@@ -1,0 +1,25 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Laravel application metrics
+  - job_name: laravel
+    metrics_path: /api/v1/metrics
+    static_configs:
+      - targets: ["nginx:80"]
+
+  # Nginx stub_status metrics (via nginx-prometheus-exporter)
+  - job_name: nginx
+    static_configs:
+      - targets: ["nginx-exporter:9113"]
+
+  # PostgreSQL metrics
+  - job_name: postgres
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
+
+  # Redis metrics
+  - job_name: redis
+    static_configs:
+      - targets: ["redis-exporter:9121"]

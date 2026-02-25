@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+
 class ImageService
 {
     public function __construct(
@@ -10,31 +13,50 @@ class ImageService
 
     public function upload($file, string $folder = 'properties'): array
     {
-        $result = $this->cloudinaryService->uploadImage($file, $folder);
+        // Try Cloudinary first if configured
+        if ($this->isCloudinaryConfigured()) {
+            $result = $this->cloudinaryService->uploadImage($file, $folder);
 
-        $url = $result['url'];
-
-        // Apply watermark to property images
-        if ($url && $folder === 'properties') {
-            $url = $this->applyWatermark($url);
+            if ($result['url']) {
+                return [
+                    'url'           => $result['url'],
+                    'thumbnail_url' => $this->generateThumbnailUrl($result['url']),
+                    'public_id'     => $result['public_id'],
+                ];
+            }
         }
 
-        return [
-            'url'           => $url,
-            'thumbnail_url' => $result['url'] ? $this->generateThumbnailUrl($result['url']) : null,
-            'public_id'     => $result['public_id'],
-        ];
+        // Fallback to local storage
+        return $this->uploadLocal($file, $folder);
     }
 
     public function uploadPrivate($file, string $folder = 'verification'): array
     {
-        return $this->cloudinaryService->uploadPrivate($file, $folder);
+        if ($this->isCloudinaryConfigured()) {
+            $result = $this->cloudinaryService->uploadPrivate($file, $folder);
+            if ($result['url']) {
+                return $result;
+            }
+        }
+
+        // Fallback: store in private local disk
+        $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+        $path = $file->storeAs("private/{$folder}", $filename, 'local');
+
+        return [
+            'url'       => url("storage/private/{$folder}/{$filename}"),
+            'public_id' => "local:{$path}",
+        ];
     }
 
     public function getSignedUrl(?string $publicId): ?string
     {
         if (! $publicId) {
             return null;
+        }
+
+        if (str_starts_with($publicId, 'local:')) {
+            return url('storage/' . str_replace('local:', '', $publicId));
         }
 
         return $this->cloudinaryService->getSignedUrl($publicId);
@@ -46,7 +68,36 @@ class ImageService
             return false;
         }
 
+        if (str_starts_with($publicId, 'local:')) {
+            $path = str_replace('local:', '', $publicId);
+            return Storage::disk('public')->delete($path);
+        }
+
         return $this->cloudinaryService->deleteImage($publicId);
+    }
+
+    protected function uploadLocal($file, string $folder): array
+    {
+        $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+        $path = $file->storeAs($folder, $filename, 'public');
+        $url = url("storage/{$path}");
+
+        return [
+            'url'           => $url,
+            'thumbnail_url' => $url, // same URL for local (no on-the-fly transforms)
+            'public_id'     => "local:{$path}",
+        ];
+    }
+
+    protected function isCloudinaryConfigured(): bool
+    {
+        $url = config('cloudinary.cloud_url') ?: env('CLOUDINARY_URL', '');
+
+        // Detect placeholder credentials
+        return $url
+            && ! str_contains($url, 'API_KEY')
+            && ! str_contains($url, 'API_SECRET')
+            && ! str_contains($url, 'CLOUD_NAME');
     }
 
     protected function generateThumbnailUrl(string $url): string

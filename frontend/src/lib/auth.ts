@@ -1,26 +1,19 @@
-import Cookies from 'js-cookie';
+/**
+ * Auth utilities for httpOnly cookie-based authentication.
+ *
+ * Access and refresh tokens are stored as httpOnly cookies by the backend
+ * and are never accessible to JavaScript. The backend also sets a non-httpOnly
+ * `is_logged_in` indicator cookie so the frontend can check auth state.
+ */
 
-const ACCESS_TOKEN_KEY = 'access_token';
-const REFRESH_TOKEN_KEY = 'refresh_token';
-
-export function getAccessToken(): string | undefined {
-  return Cookies.get(ACCESS_TOKEN_KEY);
-}
-
-export function getRefreshToken(): string | undefined {
-  return Cookies.get(REFRESH_TOKEN_KEY);
-}
-
-export function setTokens(accessToken: string, refreshToken: string): void {
-  Cookies.set(ACCESS_TOKEN_KEY, accessToken, { expires: 1, sameSite: 'lax' });
-  Cookies.set(REFRESH_TOKEN_KEY, refreshToken, { expires: 30, sameSite: 'lax' });
-}
-
-export function clearTokens(): void {
-  Cookies.remove(ACCESS_TOKEN_KEY);
-  Cookies.remove(REFRESH_TOKEN_KEY);
-}
+const AUTH_INDICATOR = 'is_logged_in';
 
 export function isAuthenticated(): boolean {
-  return !!getAccessToken();
+  if (typeof document === 'undefined') return false;
+  return document.cookie.split(';').some(c => c.trim().startsWith(`${AUTH_INDICATOR}=`));
+}
+
+export function clearAuthIndicator(): void {
+  if (typeof document === 'undefined') return;
+  document.cookie = `${AUTH_INDICATOR}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
 }

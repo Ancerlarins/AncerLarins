@@ -47,7 +47,7 @@ class EstateController extends Controller
             $query->where('name', 'ilike', '%' . $request->input('q') . '%');
         }
 
-        $estates = $query->paginate($request->input('per_page', 15));
+        $estates = $query->paginate($request->perPage(15));
 
         return $this->paginatedResponse(
             $estates->through(fn ($e) => new EstateListResource($e)),
@@ -141,7 +141,7 @@ class EstateController extends Controller
             $query->where('name', 'ilike', '%' . $request->input('q') . '%');
         }
 
-        $estates = $query->paginate($request->input('per_page', 20));
+        $estates = $query->paginate($request->perPage(20));
 
         return $this->paginatedResponse(
             $estates->through(fn ($e) => new EstateListResource($e)),

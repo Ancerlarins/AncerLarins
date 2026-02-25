@@ -8,7 +8,9 @@ use App\Http\Controllers\Api\V1\CooperativeController;
 use App\Http\Controllers\Api\V1\EstateController;
 use App\Http\Controllers\Api\V1\CommissionController;
 use App\Http\Controllers\Api\V1\DocumentController;
+use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\InquiryController;
+use App\Http\Controllers\Api\V1\MetricsController;
 use App\Http\Controllers\Api\V1\LandmarkController;
 use App\Http\Controllers\Api\V1\LocationController;
 use App\Http\Controllers\Api\V1\PropertyController;
@@ -26,6 +28,14 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::prefix('v1')->group(function () {
+
+    // ── Health Checks ─────────────────────────────────
+    Route::get('/health', [HealthController::class, 'liveness'])->middleware('throttle:30,1');
+    Route::get('/health/deep', [HealthController::class, 'readiness'])
+        ->middleware(['auth:sanctum', 'ensure.admin']);
+
+    // ── Metrics (internal, restricted by nginx to Docker network) ──
+    Route::get('/metrics', MetricsController::class);
 
     // ── Public: Auth ────────────────────────────────────
     Route::prefix('auth')->middleware('throttle:30,1')->group(function () {
@@ -95,6 +105,8 @@ Route::prefix('v1')->group(function () {
 
     // ── Public: Inquiries (guest-friendly, rate limited) ──
     Route::post('/inquiries', [InquiryController::class, 'store'])->middleware('throttle:5,1');
+    Route::post('/inquiries/track', [InquiryController::class, 'track'])->middleware('throttle:10,1');
+    Route::post('/inquiries/accept-agreement', [InquiryController::class, 'acceptAgreement'])->middleware('throttle:5,1');
 
     // ── Protected: Authenticated users ──────────────────
     Route::middleware(['auth:sanctum', 'throttle:60,1', 'ensure.phone_verified', 'track.activity'])->group(function () {
@@ -167,6 +179,8 @@ Route::prefix('v1')->group(function () {
             Route::get('/verification/documents', [AgentController::class, 'verificationDocuments']);
 
             // Property management
+            Route::get('/properties', [PropertyController::class, 'myListings']);
+            Route::get('/properties/{property}', [PropertyController::class, 'myPropertyDetail']);
             Route::post('/properties', [PropertyController::class, 'store']);
             Route::put('/properties/{property}', [PropertyController::class, 'update']);
             Route::delete('/properties/{property}', [PropertyController::class, 'destroy']);
@@ -191,10 +205,12 @@ Route::prefix('v1')->group(function () {
             Route::get('/dashboard', [AdminController::class, 'dashboard']);
 
             // Property moderation
+            Route::get('/properties', [AdminController::class, 'adminProperties']);
             Route::get('/properties/pending', [AdminController::class, 'pendingProperties']);
             Route::post('/properties/approve', [AdminController::class, 'approveProperty']);
             Route::post('/properties/reject', [AdminController::class, 'rejectProperty']);
             Route::post('/properties/feature', [AdminController::class, 'featureProperty']);
+            Route::delete('/properties/{property}', [AdminController::class, 'destroyProperty']);
 
             // Agent moderation
             Route::get('/agents/pending', [AdminController::class, 'pendingAgents']);

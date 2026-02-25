@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\EnsureAgent;
 use App\Http\Middleware\EnsurePhoneVerified;
+use App\Http\Middleware\ExtractTokenFromCookie;
 use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\TrackActivity;
@@ -21,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->prepend(ForceJsonResponse::class);
+        $middleware->prepend(ExtractTokenFromCookie::class);
         $middleware->append(SetLocale::class);
 
         $middleware->alias([

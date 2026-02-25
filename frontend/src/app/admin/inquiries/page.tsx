@@ -80,6 +80,9 @@ export default function AdminInquiriesPage() {
   const [newStatus, setNewStatus] = useState<InquiryStatus>('new');
   const [newQualification, setNewQualification] = useState<'' | QualificationType>('');
   const [staffNotes, setStaffNotes] = useState('');
+  const [inspectionDate, setInspectionDate] = useState('');
+  const [inspectionTime, setInspectionTime] = useState('');
+  const [inspectionLocation, setInspectionLocation] = useState('');
 
   const { data, isLoading } = useGetAdminInquiriesQuery({
     page,
@@ -101,9 +104,15 @@ export default function AdminInquiriesPage() {
         status: newStatus,
         qualification: newQualification || null,
         ...(staffNotes ? { staff_notes: staffNotes } : {}),
+        ...(inspectionDate ? { inspection_date: inspectionDate } : {}),
+        ...(inspectionTime ? { inspection_time: inspectionTime } : {}),
+        ...(inspectionLocation ? { inspection_location: inspectionLocation } : {}),
       }).unwrap();
       setEditingStatus(null);
       setStaffNotes('');
+      setInspectionDate('');
+      setInspectionTime('');
+      setInspectionLocation('');
     } catch { /* RTK handles */ }
   };
 
@@ -283,6 +292,31 @@ export default function AdminInquiriesPage() {
                     rows={2}
                     className="w-full px-3 py-2 border border-border rounded-lg bg-background text-text-primary text-sm resize-none"
                   />
+                  {newStatus === 'inspection_scheduled' && (
+                    <div className="grid grid-cols-3 gap-2">
+                      <input
+                        type="date"
+                        value={inspectionDate}
+                        onChange={(e) => setInspectionDate(e.target.value)}
+                        className="px-3 py-1.5 border border-border rounded-lg bg-background text-text-primary text-sm"
+                        placeholder="Viewing date"
+                      />
+                      <input
+                        type="time"
+                        value={inspectionTime}
+                        onChange={(e) => setInspectionTime(e.target.value)}
+                        className="px-3 py-1.5 border border-border rounded-lg bg-background text-text-primary text-sm"
+                        placeholder="Time"
+                      />
+                      <input
+                        type="text"
+                        value={inspectionLocation}
+                        onChange={(e) => setInspectionLocation(e.target.value)}
+                        className="px-3 py-1.5 border border-border rounded-lg bg-background text-text-primary text-sm"
+                        placeholder="Meeting location"
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -383,11 +417,39 @@ export default function AdminInquiriesPage() {
                   {detail.budget_range && <div><span className="text-text-muted">Budget:</span> <span className="text-text-primary">{detail.budget_range}</span></div>}
                   {detail.timeline && <div><span className="text-text-muted">Timeline:</span> <span className="text-text-primary">{TIMELINE_LABELS[detail.timeline] || detail.timeline}</span></div>}
                   {detail.financing_type && <div><span className="text-text-muted">Financing:</span> <span className="text-text-primary capitalize">{detail.financing_type}</span></div>}
+                  {detail.tracking_ref && <div><span className="text-text-muted">Tracking Ref:</span> <span className="text-text-primary font-mono">{detail.tracking_ref}</span></div>}
                   {detail.qualified_at && <div><span className="text-text-muted">Qualified:</span> <span className="text-text-primary">{new Date(detail.qualified_at).toLocaleDateString()}</span></div>}
                   {detail.inspection_at && <div><span className="text-text-muted">Inspection:</span> <span className="text-text-primary">{new Date(detail.inspection_at).toLocaleDateString()}</span></div>}
                   {detail.closed_at && <div><span className="text-text-muted">Closed:</span> <span className="text-text-primary">{new Date(detail.closed_at).toLocaleDateString()}</span></div>}
                 </div>
               </div>
+
+              {/* Inspection scheduling */}
+              {(detail.inspection_date || detail.status === 'inspection_scheduled' || detail.status === 'qualified' || detail.status === 'agreement_signed') && (
+                <div>
+                  <p className="text-sm font-semibold text-text-primary mb-2">Viewing Details</p>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    {detail.inspection_date && <div><span className="text-text-muted">Date:</span> <span className="text-text-primary">{new Date(detail.inspection_date).toLocaleDateString()}</span></div>}
+                    {detail.inspection_time && <div><span className="text-text-muted">Time:</span> <span className="text-text-primary">{detail.inspection_time}</span></div>}
+                    {detail.inspection_location && <div className="col-span-2"><span className="text-text-muted">Location:</span> <span className="text-text-primary">{detail.inspection_location}</span></div>}
+                    {detail.inspection_notes && <div className="col-span-2"><span className="text-text-muted">Notes:</span> <span className="text-text-primary">{detail.inspection_notes}</span></div>}
+                  </div>
+                </div>
+              )}
+
+              {/* Agreement status */}
+              {detail.agreement_accepted_at && (
+                <div>
+                  <p className="text-sm font-semibold text-text-primary mb-2">Buyer Agreement</p>
+                  <div className="flex items-center gap-2 text-sm text-success">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
+                    </svg>
+                    Digitally accepted on {new Date(detail.agreement_accepted_at).toLocaleDateString()} (v{detail.agreement_terms_version})
+                  </div>
+                  {detail.agreement_ip && <p className="text-xs text-text-muted mt-1">IP: {detail.agreement_ip}</p>}
+                </div>
+              )}
 
               {/* Message */}
               {detail.message && (
