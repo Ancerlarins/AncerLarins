@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Lead;
 use App\Models\Property;
 use App\Models\User;
+use Illuminate\Support\Facades\Log;
 
 class LeadService
 {
@@ -91,6 +92,21 @@ class LeadService
      */
     public function createFromInquiry(array $data, Property $property, ?User $user): array
     {
+        // Prevent duplicate inquiries within 24 hours
+        $existingQuery = Lead::where('property_id', $property->id)
+            ->where('created_at', '>=', now()->subDay());
+
+        if ($user) {
+            $existingQuery->where('user_id', $user->id);
+        } elseif (!empty($data['email'])) {
+            $existingQuery->where('email_hash', Lead::hashEmail($data['email']));
+        }
+
+        $existing = $existingQuery->first();
+        if ($existing) {
+            return ['lead' => $existing, 'assigned_to' => $existing->assigned_to ? User::find($existing->assigned_to) : null];
+        }
+
         $leadData = [
             'property_id'    => $property->id,
             'agent_id'       => $property->agent_id,
@@ -139,11 +155,20 @@ class LeadService
             ->orderBy('assigned_inquiries_count', 'asc');
 
         if ($isHighValue) {
-            return (clone $staffQuery)->where('role', 'super_admin')->first()
+            $staff = (clone $staffQuery)->where('role', 'super_admin')->first()
                 ?? $staffQuery->whereIn('role', ['admin', 'super_admin'])->first();
+        } else {
+            $staff = $staffQuery->whereIn('role', ['admin', 'super_admin'])->first();
         }
 
-        return $staffQuery->whereIn('role', ['admin', 'super_admin'])->first();
+        if (!$staff) {
+            Log::warning('No staff available for lead assignment', [
+                'property_id' => $property->id,
+                'is_high_value' => $isHighValue,
+            ]);
+        }
+
+        return $staff;
     }
 
     public function markResponded(Lead $lead): void

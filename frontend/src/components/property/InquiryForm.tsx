@@ -48,7 +48,7 @@ export default function InquiryForm({ property }: InquiryFormProps) {
   const [turnstileToken, setTurnstileToken] = useState('');
 
   const schema = user ? inquirySchemaAuthenticated : inquirySchema;
-  const { register, handleSubmit, formState: { errors } } = useForm<InquiryFormData>({
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<InquiryFormData>({
     resolver: zodResolver(schema) as Resolver<InquiryFormData>,
     defaultValues: {
       full_name: user?.first_name ? `${user.first_name} ${user.last_name}` : '',
@@ -80,12 +80,13 @@ export default function InquiryForm({ property }: InquiryFormProps) {
       setTrackingRef(res.data.tracking_ref || '');
       setSubmitted(true);
       setMobileOpen(false);
+      reset();
     } catch {
       toast('Could not submit inquiry. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
-  }, [submitInquiry, property.id, loading, toast]);
+  }, [submitInquiry, property.id, loading, toast, reset]);
 
   const inputClass = 'w-full px-3 py-2.5 rounded-lg border border-border bg-background text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent-dark/30 focus:border-accent-dark';
   const errorClass = 'text-xs text-error mt-0.5';

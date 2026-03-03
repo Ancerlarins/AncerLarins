@@ -32,15 +32,16 @@ interface KanbanCardProps {
   inquiry: InquiryListItem;
   onDragStart: (e: React.DragEvent, id: string) => void;
   onClick: (inquiry: InquiryListItem) => void;
+  isUpdating?: boolean;
 }
 
-function KanbanCard({ inquiry, onDragStart, onClick }: KanbanCardProps) {
+function KanbanCard({ inquiry, onDragStart, onClick, isUpdating }: KanbanCardProps) {
   return (
     <div
-      draggable
+      draggable={!isUpdating}
       onDragStart={(e) => onDragStart(e, inquiry.id)}
       onClick={() => onClick(inquiry)}
-      className="bg-background border border-border rounded-lg p-3 cursor-grab active:cursor-grabbing hover:border-accent/30 transition-colors select-none"
+      className={`bg-background border border-border rounded-lg p-3 cursor-grab active:cursor-grabbing hover:border-accent/30 transition-colors select-none ${isUpdating ? 'opacity-50 pointer-events-none' : ''}`}
     >
       <div className="flex items-center justify-between mb-1.5">
         <p className="text-sm font-medium text-text-primary truncate">{inquiry.full_name || 'Unknown'}</p>
@@ -75,9 +76,10 @@ interface KanbanColumnProps {
   onDragEnter: () => void;
   onDragLeave: () => void;
   onCardClick: (inquiry: InquiryListItem) => void;
+  updatingId: string | null;
 }
 
-function KanbanColumn({ column, inquiries, onDragStart, onDrop, isDragOver, onDragEnter, onDragLeave, onCardClick }: KanbanColumnProps) {
+function KanbanColumn({ column, inquiries, onDragStart, onDrop, isDragOver, onDragEnter, onDragLeave, onCardClick, updatingId }: KanbanColumnProps) {
   return (
     <div
       className={`flex flex-col min-w-[260px] max-w-[300px] rounded-xl transition-colors ${
@@ -106,7 +108,7 @@ function KanbanColumn({ column, inquiries, onDragStart, onDrop, isDragOver, onDr
           </div>
         ) : (
           inquiries.map((inq) => (
-            <KanbanCard key={inq.id} inquiry={inq} onDragStart={onDragStart} onClick={onCardClick} />
+            <KanbanCard key={inq.id} inquiry={inq} onDragStart={onDragStart} onClick={onCardClick} isUpdating={updatingId === inq.id} />
           ))
         )}
       </div>
@@ -120,6 +122,7 @@ export default function InquiryKanban({ onCardClick }: { onCardClick: (inquiry: 
 
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<InquiryStatus | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const inquiries = data?.data || [];
@@ -150,9 +153,12 @@ export default function InquiryKanban({ onCardClick }: { onCardClick: (inquiry: 
       return;
     }
 
+    setUpdatingId(draggedId);
     try {
       await updateStatus({ id: draggedId, status: newStatus }).unwrap();
-    } catch { /* RTK handles */ }
+    } catch { /* RTK handles */ } finally {
+      setUpdatingId(null);
+    }
 
     setDraggedId(null);
     setDragOverColumn(null);
@@ -184,6 +190,7 @@ export default function InquiryKanban({ onCardClick }: { onCardClick: (inquiry: 
           onDragEnter={() => setDragOverColumn(col.status)}
           onDragLeave={() => setDragOverColumn((prev) => prev === col.status ? null : prev)}
           onCardClick={onCardClick}
+          updatingId={updatingId}
         />
       ))}
     </div>

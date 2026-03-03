@@ -81,7 +81,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'Article',
+    '@type': 'BlogPosting',
     headline: post.title,
     description: post.excerpt || post.content.slice(0, 155),
     url: `https://ancerlarins.com/blog/${post.slug}`,
@@ -100,11 +100,25 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     },
   };
 
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://ancerlarins.com' },
+      { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://ancerlarins.com/blog' },
+      { '@type': 'ListItem', position: 3, name: post.title },
+    ],
+  };
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
       <Navbar />
       <main className="min-h-screen bg-background">

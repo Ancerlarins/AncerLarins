@@ -11,6 +11,7 @@ use App\Models\Lead;
 use App\Models\Property;
 use App\Models\Report;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 
 class AdminService
 {
@@ -20,40 +21,36 @@ class AdminService
 
     public function getDashboardStats(): array
     {
-        $weekStart = now()->startOfWeek();
+        return Cache::remember('admin:dashboard_stats', 30, function () {
+            $weekStart = now()->startOfWeek();
 
-        // Properties grouped by status
-        $propertiesByStatus = [];
-        foreach (PropertyStatus::cases() as $status) {
-            $count = Property::where('status', $status)->count();
-            if ($count > 0) {
-                $propertiesByStatus[$status->value] = $count;
-            }
-        }
+            // Single grouped query for properties by status
+            $propertiesByStatus = Property::selectRaw('status, count(*) as total')
+                ->groupBy('status')
+                ->pluck('total', 'status')
+                ->toArray();
 
-        // Agents grouped by verification status
-        $agentsByVerification = [];
-        foreach (VerificationStatus::cases() as $status) {
-            $count = AgentProfile::where('verification_status', $status)->count();
-            if ($count > 0) {
-                $agentsByVerification[$status->value] = $count;
-            }
-        }
+            // Single grouped query for agents by verification status
+            $agentsByVerification = AgentProfile::selectRaw('verification_status, count(*) as total')
+                ->groupBy('verification_status')
+                ->pluck('total', 'verification_status')
+                ->toArray();
 
-        return [
-            'total_users'              => User::count(),
-            'total_agents'             => AgentProfile::count(),
-            'total_properties'         => Property::count(),
-            'pending_approvals'        => Property::pending()->count(),
-            'pending_agents'           => AgentProfile::pending()->count(),
-            'total_leads'              => Lead::count(),
-            'leads_this_week'          => Lead::where('created_at', '>=', $weekStart)->count(),
-            'open_reports'             => Report::open()->count(),
-            'properties_by_status'     => $propertiesByStatus,
-            'agents_by_verification'   => $agentsByVerification,
-            'new_listings_this_week'   => Property::where('created_at', '>=', $weekStart)->count(),
-            'new_users_this_week'      => User::where('created_at', '>=', $weekStart)->count(),
-        ];
+            return [
+                'total_users'              => User::count(),
+                'total_agents'             => array_sum($agentsByVerification),
+                'total_properties'         => array_sum($propertiesByStatus),
+                'pending_approvals'        => $propertiesByStatus[PropertyStatus::Pending->value] ?? 0,
+                'pending_agents'           => $agentsByVerification[VerificationStatus::Pending->value] ?? 0,
+                'total_leads'              => Lead::count(),
+                'leads_this_week'          => Lead::where('created_at', '>=', $weekStart)->count(),
+                'open_reports'             => Report::open()->count(),
+                'properties_by_status'     => $propertiesByStatus,
+                'agents_by_verification'   => $agentsByVerification,
+                'new_listings_this_week'   => Property::where('created_at', '>=', $weekStart)->count(),
+                'new_users_this_week'      => User::where('created_at', '>=', $weekStart)->count(),
+            ];
+        });
     }
 
     public function approveProperty(Property $property, User $admin): Property

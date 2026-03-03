@@ -17,7 +17,6 @@ const rawBaseQuery = fetchBaseQuery({
   },
 });
 
-let isRefreshing = false;
 let refreshPromise: Promise<boolean> | null = null;
 
 const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (
@@ -28,31 +27,37 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
   let result = await rawBaseQuery(args, api, extraOptions);
 
   if (result.error && result.error.status === 401) {
-    // Prevent multiple concurrent refresh attempts
-    if (!isRefreshing) {
-      isRefreshing = true;
+    // All concurrent 401s share the same refresh promise
+    if (!refreshPromise) {
       refreshPromise = (async () => {
-        const refreshResult = await rawBaseQuery(
-          { url: '/auth/refresh', method: 'POST' },
-          api,
-          extraOptions
-        );
-        return !!refreshResult.data;
+        try {
+          const refreshResult = await rawBaseQuery(
+            { url: '/auth/refresh', method: 'POST' },
+            api,
+            extraOptions
+          );
+          return !!refreshResult.data;
+        } catch {
+          return false;
+        }
       })();
     }
 
-    const refreshed = await refreshPromise;
-    isRefreshing = false;
-    refreshPromise = null;
+    try {
+      const refreshed = await refreshPromise;
 
-    if (refreshed) {
-      // Retry the original request — new cookies are set by the refresh response
-      result = await rawBaseQuery(args, api, extraOptions);
-    } else {
-      clearAuthIndicator();
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+      if (refreshed) {
+        // Retry the original request — new cookies are set by the refresh response
+        result = await rawBaseQuery(args, api, extraOptions);
+      } else {
+        clearAuthIndicator();
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
       }
+    } finally {
+      // Only the last awaiter clears the promise
+      refreshPromise = null;
     }
   }
 

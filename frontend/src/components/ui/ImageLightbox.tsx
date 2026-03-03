@@ -13,6 +13,7 @@ export default function ImageLightbox({ images, initialIndex = 0, onClose }: Ima
   const [index, setIndex] = useState(initialIndex);
   const [touchStartX, setTouchStartX] = useState(0);
   const [touchDelta, setTouchDelta] = useState(0);
+  const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
 
   const goTo = useCallback((dir: 1 | -1) => {
     setIndex((prev) => (prev + dir + images.length) % images.length);
@@ -106,15 +107,25 @@ export default function ImageLightbox({ images, initialIndex = 0, onClose }: Ima
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <Image
-          src={images[index]?.url || ''}
-          alt={images[index]?.caption || `Image ${index + 1}`}
-          fill
-          className="object-contain"
-          sizes="100vw"
-          priority
-          draggable={false}
-        />
+        {failedImages.has(index) ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-white/50">
+            <svg className="w-16 h-16 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+            </svg>
+            <p className="text-sm">Image could not be loaded</p>
+          </div>
+        ) : (
+          <Image
+            src={images[index]?.url || ''}
+            alt={images[index]?.caption || `Image ${index + 1}`}
+            fill
+            className="object-contain"
+            sizes="100vw"
+            priority
+            draggable={false}
+            onError={() => setFailedImages((prev) => new Set(prev).add(index))}
+          />
+        )}
       </div>
 
       {/* Caption */}

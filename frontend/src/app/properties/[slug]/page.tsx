@@ -76,6 +76,17 @@ export default async function PropertyDetailPage({ params }: Props) {
   const { slug } = await params;
   const property = await fetchProperty(slug);
 
+  // BreadcrumbList structured data
+  const breadcrumbLd = property ? {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://ancerlarins.com' },
+      { '@type': 'ListItem', position: 2, name: 'Properties', item: 'https://ancerlarins.com/properties' },
+      { '@type': 'ListItem', position: 3, name: property.title },
+    ],
+  } : null;
+
   // JSON-LD structured data
   const jsonLd = property ? {
     '@context': 'https://schema.org',
@@ -111,6 +122,12 @@ export default async function PropertyDetailPage({ params }: Props) {
 
   return (
     <>
+      {breadcrumbLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+        />
+      )}
       {jsonLd && (
         <script
           type="application/ld+json"
