@@ -7,17 +7,17 @@ use Illuminate\Support\Facades\Log;
 
 class CloudinaryService
 {
-    protected Cloudinary $cloudinary;
+    protected ?Cloudinary $cloudinary = null;
 
-    public function __construct()
+    protected function cloudinary(): Cloudinary
     {
-        $this->cloudinary = app(Cloudinary::class);
+        return $this->cloudinary ??= app(Cloudinary::class);
     }
 
     public function uploadImage($file, string $folder = 'properties'): array
     {
         try {
-            $result = $this->cloudinary->uploadApi()->upload($file->getRealPath(), [
+            $result = $this->cloudinary()->uploadApi()->upload($file->getRealPath(), [
                 'folder' => "ancerlarins/{$folder}",
                 'resource_type' => 'image',
                 'transformation' => ['quality' => 'auto', 'fetch_format' => 'auto'],
@@ -37,7 +37,7 @@ class CloudinaryService
     public function uploadPrivate($file, string $folder = 'verification'): array
     {
         try {
-            $result = $this->cloudinary->uploadApi()->upload($file->getRealPath(), [
+            $result = $this->cloudinary()->uploadApi()->upload($file->getRealPath(), [
                 'folder' => "ancerlarins/{$folder}",
                 'resource_type' => 'auto',
                 'type' => 'authenticated',
@@ -57,7 +57,7 @@ class CloudinaryService
     public function getSignedUrl(string $publicId): ?string
     {
         try {
-            $url = (string) $this->cloudinary->image($publicId)
+            $url = (string) $this->cloudinary()->image($publicId)
                 ->signUrl()
                 ->toUrl();
 
@@ -75,7 +75,7 @@ class CloudinaryService
     public function uploadFromUrl(string $url, string $folder = 'properties'): array
     {
         try {
-            $result = $this->cloudinary->uploadApi()->upload($url, [
+            $result = $this->cloudinary()->uploadApi()->upload($url, [
                 'folder' => "ancerlarins/{$folder}",
                 'resource_type' => 'image',
                 'transformation' => ['quality' => 'auto', 'fetch_format' => 'auto'],
@@ -95,7 +95,7 @@ class CloudinaryService
     public function deleteImage(string $publicId): bool
     {
         try {
-            $this->cloudinary->uploadApi()->destroy($publicId);
+            $this->cloudinary()->uploadApi()->destroy($publicId);
 
             return true;
         } catch (\Exception $e) {
