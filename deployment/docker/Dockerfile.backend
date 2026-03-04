@@ -43,6 +43,9 @@ RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
 # Copy application code
 COPY backend/ .
 
+# Remove dev-only config files whose classes aren't installed in production
+RUN rm -f config/scribe.php
+
 # Finalize composer (caching deferred to entrypoint where .env is available)
 RUN composer dump-autoload --optimize
 
