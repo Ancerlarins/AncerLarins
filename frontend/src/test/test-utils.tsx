@@ -8,14 +8,15 @@ import searchReducer from '@/store/slices/searchSlice';
 import uiReducer from '@/store/slices/uiSlice';
 
 function createTestStore(preloadedState?: Record<string, unknown>) {
-  // @ts-expect-error -- test-only store; Redux Toolkit generic inference conflicts with baseApi types
   return configureStore({
+    // @ts-ignore -- test store: RTK Query type inference conflict
     reducer: {
       [baseApi.reducerPath]: baseApi.reducer,
       auth: authReducer,
       search: searchReducer,
       ui: uiReducer,
     },
+    // @ts-ignore -- test store: duplicate CombinedState types from RTK Query
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware().concat(baseApi.middleware),
     preloadedState,
