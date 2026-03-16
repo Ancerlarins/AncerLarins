@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('otp_codes')) {
+            return;
+        }
+
         Schema::create('otp_codes', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('phone');

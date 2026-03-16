@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('external_price_data')) {
+            return;
+        }
+
         Schema::create('external_price_data', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('source', 50);

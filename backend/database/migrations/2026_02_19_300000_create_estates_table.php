@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('estates')) {
+            return;
+        }
+
         Schema::create('estates', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('area_id')->constrained()->cascadeOnDelete();

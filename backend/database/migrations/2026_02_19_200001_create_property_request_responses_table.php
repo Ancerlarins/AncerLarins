@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('property_request_responses')) {
+            return;
+        }
+
         Schema::create('property_request_responses', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('property_request_id')->constrained()->cascadeOnDelete();

@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('price_history')) {
+            return;
+        }
+
         Schema::create('price_history', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('property_id')->constrained()->cascadeOnDelete();

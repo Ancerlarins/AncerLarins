@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('agent_subscriptions')) {
+            return;
+        }
+
         Schema::create('agent_subscriptions', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('agent_profile_id')->constrained()->cascadeOnDelete();

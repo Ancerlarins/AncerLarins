@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('cooperative_members')) {
+            return;
+        }
+
         Schema::create('cooperative_members', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('cooperative_id')->constrained()->cascadeOnDelete();

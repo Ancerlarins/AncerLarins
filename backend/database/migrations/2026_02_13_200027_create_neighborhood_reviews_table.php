@@ -9,6 +9,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('neighborhood_reviews')) {
+            return;
+        }
+
         Schema::create('neighborhood_reviews', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('area_id')->constrained()->cascadeOnDelete();

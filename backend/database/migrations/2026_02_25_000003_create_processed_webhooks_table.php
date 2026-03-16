@@ -13,6 +13,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('processed_webhooks')) {
+            return;
+        }
+
         Schema::create('processed_webhooks', function (Blueprint $table) {
             $table->id();
             $table->string('provider', 20)->index();           // 'paystack', 'termii'

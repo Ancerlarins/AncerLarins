@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('whatsapp_conversations')) {
+            return;
+        }
+
         Schema::create('whatsapp_conversations', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('phone')->unique();
