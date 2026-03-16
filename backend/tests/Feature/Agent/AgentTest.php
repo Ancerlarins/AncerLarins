@@ -2,11 +2,7 @@
 
 namespace Tests\Feature\Agent;
 
-use App\Models\AgentProfile;
 use App\Models\Lead;
-use App\Models\User;
-use App\Services\AgentService;
-use App\Services\LeadService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Tests\Traits\CreatesTestData;

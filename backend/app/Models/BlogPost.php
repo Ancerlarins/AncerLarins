@@ -56,7 +56,7 @@ class BlogPost extends Model
     public function scopeSearch(Builder $query, string $term): Builder
     {
         return $query->whereRaw(
-            "MATCH(title, excerpt, content) AGAINST(? IN BOOLEAN MODE)",
+            'MATCH(title, excerpt, content) AGAINST(? IN BOOLEAN MODE)',
             [$term]
         );
     }

@@ -218,7 +218,7 @@ class Property extends Model
     public function scopeSearch(Builder $query, string $term): Builder
     {
         return $query->whereRaw(
-            "MATCH(title, description) AGAINST(? IN BOOLEAN MODE)",
+            'MATCH(title, description) AGAINST(? IN BOOLEAN MODE)',
             [$term]
         );
     }

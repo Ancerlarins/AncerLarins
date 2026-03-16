@@ -3,11 +3,11 @@
 namespace App\Services;
 
 use App\Enums\PropertyStatus;
+use App\Enums\TourType;
 use App\Enums\UserRole;
 use App\Models\AgentProfile;
 use App\Models\Landmark;
 use App\Models\PriceHistory;
-use App\Enums\TourType;
 use App\Models\Property;
 use App\Models\PropertyImage;
 use App\Models\PropertyView;

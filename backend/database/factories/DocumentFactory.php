@@ -34,20 +34,20 @@ class DocumentFactory extends Factory
 
     public function definition(): array
     {
-        $type     = fake()->randomElement(self::TYPES);
-        $fileName = fake()->slug(3) . '.pdf';
+        $type = fake()->randomElement(self::TYPES);
+        $fileName = fake()->slug(3).'.pdf';
 
         return [
-            'lead_id'     => Lead::factory(),
+            'lead_id' => Lead::factory(),
             'uploaded_by' => User::factory(),
-            'type'        => $type,
-            'title'       => ucwords(str_replace('_', ' ', $type)) . ' — ' . fake()->date('Y-m-d'),
-            'file_path'   => 'documents/' . fake()->uuid() . '/' . $fileName,
-            'file_name'   => $fileName,
-            'mime_type'   => fake()->randomElement(self::MIME_TYPES),
-            'file_size'   => fake()->numberBetween(50_000, 10_000_000), // 50 KB – 10 MB
-            'notes'       => fake()->optional(0.3)->sentence(8),
-            'status'      => 'pending',
+            'type' => $type,
+            'title' => ucwords(str_replace('_', ' ', $type)).' — '.fake()->date('Y-m-d'),
+            'file_path' => 'documents/'.fake()->uuid().'/'.$fileName,
+            'file_name' => $fileName,
+            'mime_type' => fake()->randomElement(self::MIME_TYPES),
+            'file_size' => fake()->numberBetween(50_000, 10_000_000), // 50 KB – 10 MB
+            'notes' => fake()->optional(0.3)->sentence(8),
+            'status' => 'pending',
         ];
     }
 
@@ -57,8 +57,8 @@ class DocumentFactory extends Factory
     public function buyerAgreement(): static
     {
         return $this->state(fn () => [
-            'type'  => 'buyer_agreement',
-            'title' => 'Buyer Agreement — ' . fake()->date('Y-m-d'),
+            'type' => 'buyer_agreement',
+            'title' => 'Buyer Agreement — '.fake()->date('Y-m-d'),
         ]);
     }
 

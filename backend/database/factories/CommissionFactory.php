@@ -17,22 +17,22 @@ class CommissionFactory extends Factory
 
     public function definition(): array
     {
-        $salePriceKobo      = fake()->numberBetween(5_000_000_00, 500_000_000_00); // kobo
-        $commissionRate     = fake()->randomElement([2.50, 3.00, 5.00]);
+        $salePriceKobo = fake()->numberBetween(5_000_000_00, 500_000_000_00); // kobo
+        $commissionRate = fake()->randomElement([2.50, 3.00, 5.00]);
         $commissionAmountKobo = (int) round($salePriceKobo * ($commissionRate / 100));
 
         return [
-            'lead_id'               => Lead::factory(),
-            'property_id'           => Property::factory(),
-            'sale_price_kobo'       => $salePriceKobo,
-            'commission_rate'       => $commissionRate,
+            'lead_id' => Lead::factory(),
+            'property_id' => Property::factory(),
+            'sale_price_kobo' => $salePriceKobo,
+            'commission_rate' => $commissionRate,
             'commission_amount_kobo' => $commissionAmountKobo,
-            'status'                => 'pending',
-            'payment_method'        => null,
-            'payment_reference'     => null,
-            'paid_at'               => null,
-            'notes'                 => fake()->optional(0.4)->sentence(8),
-            'created_by'            => User::factory()->admin(),
+            'status' => 'pending',
+            'payment_method' => null,
+            'payment_reference' => null,
+            'paid_at' => null,
+            'notes' => fake()->optional(0.4)->sentence(8),
+            'created_by' => User::factory()->admin(),
         ];
     }
 
@@ -42,10 +42,10 @@ class CommissionFactory extends Factory
     public function paid(): static
     {
         return $this->state(fn () => [
-            'status'            => 'paid',
-            'payment_method'    => fake()->randomElement(['bank_transfer', 'cash', 'cheque']),
+            'status' => 'paid',
+            'payment_method' => fake()->randomElement(['bank_transfer', 'cash', 'cheque']),
             'payment_reference' => strtoupper(fake()->bothify('PAY-########')),
-            'paid_at'           => now(),
+            'paid_at' => now(),
         ]);
     }
 

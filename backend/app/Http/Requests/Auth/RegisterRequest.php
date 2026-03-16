@@ -20,9 +20,9 @@ class RegisterRequest extends FormRequest
         if ($this->phone) {
             $phone = preg_replace('/[\s\-\(\)]+/', '', $this->phone);
             if (str_starts_with($phone, '0')) {
-                $phone = '+234' . substr($phone, 1);
-            } elseif (str_starts_with($phone, '234') && !str_starts_with($phone, '+')) {
-                $phone = '+' . $phone;
+                $phone = '+234'.substr($phone, 1);
+            } elseif (str_starts_with($phone, '234') && ! str_starts_with($phone, '+')) {
+                $phone = '+'.$phone;
             }
             $this->merge(['phone' => $phone]);
         }

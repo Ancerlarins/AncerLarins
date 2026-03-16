@@ -7,7 +7,6 @@ use App\Enums\CooperativeStatus;
 use App\Models\Cooperative;
 use App\Models\CooperativeMember;
 use App\Models\User;
-use App\Services\CooperativeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Tests\Traits\CreatesTestData;

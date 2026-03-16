@@ -2,8 +2,8 @@
 
 use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\EnsureAgent;
-use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\EnsurePhoneVerified;
+use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\ExtractTokenFromCookie;
 use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Middleware\SecurityHeaders;
@@ -12,7 +12,6 @@ use App\Http\Middleware\TrackActivity;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
 use Sentry\Laravel\Integration;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;

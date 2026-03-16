@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Passkey;
 
-use App\Models\User;
 use App\Models\WebauthnCredential;
 use App\Services\WebauthnService;
 use Illuminate\Foundation\Testing\RefreshDatabase;

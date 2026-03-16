@@ -32,8 +32,8 @@ class LandmarkFactory extends Factory
     {
         return [
             'area_id' => Area::factory(),
-            'name'    => fake()->company() . ' ' . ucfirst(fake()->randomElement(['Plaza', 'Centre', 'Hub', 'Junction', 'Park', 'Mall'])),
-            'type'    => fake()->randomElement(self::TYPES),
+            'name' => fake()->company().' '.ucfirst(fake()->randomElement(['Plaza', 'Centre', 'Hub', 'Junction', 'Park', 'Mall'])),
+            'type' => fake()->randomElement(self::TYPES),
         ];
     }
 
@@ -44,7 +44,7 @@ class LandmarkFactory extends Factory
     {
         return $this->state(fn () => [
             'type' => 'school',
-            'name' => fake()->lastName() . ' ' . fake()->randomElement(['Primary School', 'Secondary School', 'International Academy']),
+            'name' => fake()->lastName().' '.fake()->randomElement(['Primary School', 'Secondary School', 'International Academy']),
         ]);
     }
 
@@ -55,7 +55,7 @@ class LandmarkFactory extends Factory
     {
         return $this->state(fn () => [
             'type' => 'hospital',
-            'name' => fake()->lastName() . ' ' . fake()->randomElement(['Hospital', 'Clinic', 'Medical Centre']),
+            'name' => fake()->lastName().' '.fake()->randomElement(['Hospital', 'Clinic', 'Medical Centre']),
         ]);
     }
 
@@ -66,7 +66,7 @@ class LandmarkFactory extends Factory
     {
         return $this->state(fn () => [
             'type' => 'shopping_mall',
-            'name' => fake()->company() . ' Mall',
+            'name' => fake()->company().' Mall',
         ]);
     }
 }

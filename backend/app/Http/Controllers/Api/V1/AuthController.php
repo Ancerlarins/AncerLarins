@@ -139,5 +139,4 @@ class AuthController extends Controller
 
         return $jsonResponse;
     }
-
 }

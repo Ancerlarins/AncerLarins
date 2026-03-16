@@ -19,21 +19,21 @@ class LeadFactory extends Factory
     public function definition(): array
     {
         return [
-            'property_id'  => Property::factory(),
-            'agent_id'     => AgentProfile::factory(),
-            'user_id'      => null,
+            'property_id' => Property::factory(),
+            'agent_id' => AgentProfile::factory(),
+            'user_id' => null,
             'contact_type' => fake()->randomElement(ContactType::cases()),
-            'source'       => fake()->randomElement(['organic', 'referral', 'facebook', 'google', 'direct']),
+            'source' => fake()->randomElement(['organic', 'referral', 'facebook', 'google', 'direct']),
             'utm_campaign' => null,
             // PII fields — stored encrypted at rest via 'encrypted' cast on the model
-            'full_name'    => fake()->name(),
-            'email'        => fake()->safeEmail(),
-            'phone'        => '+234' . fake()->numerify('80########'),
+            'full_name' => fake()->name(),
+            'email' => fake()->safeEmail(),
+            'phone' => '+234'.fake()->numerify('80########'),
             'budget_range' => fake()->randomElement(['5m-10m', '10m-30m', '30m-50m', '50m-100m', null]),
-            'timeline'     => fake()->randomElement(['immediately', '1_3months', '3_6months', '6months_plus', null]),
+            'timeline' => fake()->randomElement(['immediately', '1_3months', '3_6months', '6months_plus', null]),
             'financing_type' => fake()->randomElement(['cash', 'mortgage', 'installment', null]),
-            'message'      => fake()->optional(0.7)->sentence(12),
-            'status'       => 'new',
+            'message' => fake()->optional(0.7)->sentence(12),
+            'status' => 'new',
         ];
     }
 
@@ -53,9 +53,9 @@ class LeadFactory extends Factory
     public function qualified(): static
     {
         return $this->state(fn () => [
-            'status'        => 'qualified',
+            'status' => 'qualified',
             'qualification' => 'hot',
-            'qualified_at'  => now(),
+            'qualified_at' => now(),
         ]);
     }
 
@@ -65,7 +65,7 @@ class LeadFactory extends Factory
     public function closed(): static
     {
         return $this->state(fn () => [
-            'status'    => 'closed_won',
+            'status' => 'closed_won',
             'closed_at' => now(),
         ]);
     }
