@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, startTransition } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -25,7 +25,7 @@ export default function NeighborhoodsPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    setError('');
+    startTransition(() => { setError(''); });
     api.get('/locations/areas')
       .then(({ data }) => setAreas(data.data || []))
       .catch(() => { setError('Failed to load neighborhoods. Please try again.'); })

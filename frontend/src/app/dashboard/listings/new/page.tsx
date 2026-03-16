@@ -10,7 +10,7 @@ import { useUploadPropertyImagesMutation, useUploadPropertyVideoMutation } from 
 import { useGetStatesQuery, useGetCitiesQuery, useGetAreasQuery, useGetPropertyTypesQuery } from '@/store/api/locationApi';
 import ImageUploader from '@/components/dashboard/ImageUploader';
 import type { ImageFile } from '@/components/dashboard/ImageUploader';
-import type { CreatePropertyPayload, ListingType, Furnishing, RentPeriod } from '@/types';
+import type { CreatePropertyPayload, ListingType, Furnishing } from '@/types';
 
 const STEPS = ['Basic Info', 'Pricing', 'Location', 'Details', 'Photos', 'Video', 'Review'];
 

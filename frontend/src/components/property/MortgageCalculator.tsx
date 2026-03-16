@@ -52,7 +52,6 @@ export default function MortgageCalculator({ propertyPrice }: { propertyPrice: n
   const interestPct = calculation.totalCost > 0
     ? Math.round((calculation.totalInterest / calculation.totalCost) * 100)
     : 0;
-  const downPct = 100 - principalPct - interestPct;
 
   return (
     <div className="bg-surface rounded-xl border border-border p-6">

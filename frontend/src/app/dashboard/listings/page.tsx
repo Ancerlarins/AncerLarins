@@ -7,7 +7,7 @@ import { useGetMyListingsQuery } from '@/store/api/agentApi';
 import { useDeletePropertyMutation } from '@/store/api/propertyApi';
 import { PropertyStatusBadge } from '@/components/dashboard/StatusBadge';
 import { formatPrice, formatDate } from '@/lib/utils';
-import type { PropertyStatus } from '@/types';
+
 
 const STATUS_FILTERS: { value: string; label: string }[] = [
   { value: '', label: 'All' },

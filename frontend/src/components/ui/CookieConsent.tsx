@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 
 const STORAGE_KEY = 'cookie-consent';
@@ -26,13 +26,7 @@ function saveConsent(level: 'all' | 'essential') {
 }
 
 export default function CookieConsent() {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    if (!getConsent()) {
-      setVisible(true);
-    }
-  }, []);
+  const [visible, setVisible] = useState(() => !getConsent());
 
   function handleAccept(level: 'all' | 'essential') {
     saveConsent(level);

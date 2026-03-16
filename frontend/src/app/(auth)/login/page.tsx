@@ -18,7 +18,7 @@ export default function LoginPage() {
   const [login, { isLoading: loginLoading }] = useLoginMutation();
   const [verifyOtp, { isLoading: otpLoading }] = useVerifyOtpMutation();
   const { login: passkeyLogin, isLoading: passkeyLoading, error: passkeyError } = usePasskeyLogin();
-  const [supportsPasskey, setSupportsPasskey] = useState(false);
+  const [supportsPasskey] = useState(() => isWebAuthnSupported());
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('');
   const [apiError, setApiError] = useState('');
@@ -38,10 +38,6 @@ export default function LoginPage() {
       router.replace(getRoleRedirect(user.role));
     }
   }, [isAuthenticated, user, router]);
-
-  useEffect(() => {
-    setSupportsPasskey(isWebAuthnSupported());
-  }, []);
 
   if (isAuthenticated && user) {
     return (

@@ -10,7 +10,7 @@ import {
   usePromoteToAdminMutation,
   useDemoteAdminMutation,
 } from '@/store/api/adminApi';
-import { formatDate, formatRelativeTime } from '@/lib/utils';
+import { formatRelativeTime } from '@/lib/utils';
 
 export default function AdminTeamPage() {
   const router = useRouter();
@@ -22,18 +22,20 @@ export default function AdminTeamPage() {
   const [promoteModal, setPromoteModal] = useState<{ id: string; name: string } | null>(null);
   const [demoteModal, setDemoteModal] = useState<{ id: string; name: string } | null>(null);
 
-  if (currentUser && currentUser.role !== 'super_admin') {
-    router.push('/admin');
-    return null;
-  }
+  const isSuperAdmin = currentUser?.role === 'super_admin';
 
-  const { data: adminData, isLoading: adminsLoading } = useGetAdminListQuery({ page });
+  const { data: adminData, isLoading: adminsLoading } = useGetAdminListQuery({ page }, { skip: !isSuperAdmin });
   const { data: usersData, isLoading: usersLoading } = useGetAdminUsersQuery(
     { role: 'user', page: userSearchPage, per_page: 10, search: userSearch || undefined },
-    { skip: !showAddModal }
+    { skip: !showAddModal || !isSuperAdmin }
   );
   const [promoteToAdmin, { isLoading: promoting }] = usePromoteToAdminMutation();
   const [demoteAdmin, { isLoading: demoting }] = useDemoteAdminMutation();
+
+  if (currentUser && !isSuperAdmin) {
+    router.push('/admin');
+    return null;
+  }
 
   const admins = adminData?.data || [];
   const searchResults = usersData?.data || [];

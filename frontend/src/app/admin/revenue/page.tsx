@@ -7,7 +7,6 @@ import {
   useGetRevenueSummaryQuery,
   useCreateCommissionMutation,
   useUpdateCommissionStatusMutation,
-  useCalculateCommissionMutation,
 } from '@/store/api/commissionApi';
 import { formatRelativeTime } from '@/lib/utils';
 
@@ -180,7 +179,7 @@ export default function AdminRevenuePage() {
   });
   const [createCommission, { isLoading: creating }] = useCreateCommissionMutation();
   const [updateStatus] = useUpdateCommissionStatusMutation();
-  const [calcCommission] = useCalculateCommissionMutation();
+
 
   const summaryData = summary?.data;
   const items = commissions?.data || [];

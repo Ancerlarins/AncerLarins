@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, startTransition } from 'react';
 
 interface UseScrollRevealOptions {
   threshold?: number;
@@ -19,7 +19,7 @@ export function useScrollReveal({
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setPrefersReducedMotion(mq.matches);
+    startTransition(() => { setPrefersReducedMotion(mq.matches); });
     if (mq.matches) {
       setIsVisible(true);
       return;

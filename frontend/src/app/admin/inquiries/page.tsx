@@ -6,7 +6,6 @@ import {
   useGetAdminInquiriesQuery,
   useGetAdminInquiryQuery,
   useUpdateInquiryStatusMutation,
-  useAssignInquiryMutation,
 } from '@/store/api/inquiryApi';
 import { formatRelativeTime } from '@/lib/utils';
 import type { InquiryStatus, QualificationType } from '@/types/inquiry';
@@ -103,7 +102,7 @@ export default function AdminInquiriesPage() {
   });
   const { data: detailData } = useGetAdminInquiryQuery(detailId!, { skip: !detailId });
   const [updateStatus, { isLoading: updatingStatus }] = useUpdateInquiryStatusMutation();
-  const [assignInquiry] = useAssignInquiryMutation();
+
 
   const inquiries = data?.data || [];
   const meta = data?.meta;

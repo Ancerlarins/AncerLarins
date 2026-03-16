@@ -1,13 +1,12 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import Link from 'next/link';
 import {
   useGetAdminInquiriesQuery,
   useUpdateInquiryStatusMutation,
 } from '@/store/api/inquiryApi';
 import { formatRelativeTime } from '@/lib/utils';
-import type { InquiryStatus, InquiryListItem, QualificationType } from '@/types/inquiry';
+import type { InquiryStatus, InquiryListItem } from '@/types/inquiry';
 
 const COLUMNS: { status: InquiryStatus; label: string; color: string }[] = [
   { status: 'new', label: 'New', color: 'border-blue-400' },

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, startTransition } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -36,8 +36,10 @@ export default function NeighborhoodDetailPage({ params }: { params: Promise<{ s
   useEffect(() => {
     if (!slug) return;
 
-    setLoading(true);
-    setError('');
+    startTransition(() => {
+      setLoading(true);
+      setError('');
+    });
     Promise.all([
       api.get(`/locations/areas/${slug}`),
       api.get('/properties', { params: { area_slug: slug, per_page: 12 } }),

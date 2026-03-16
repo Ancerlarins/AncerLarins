@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { useGetAgentLeadsQuery, useRespondToLeadMutation } from '@/store/api/agentApi';
-import { formatRelativeTime, formatDate } from '@/lib/utils';
+import { formatRelativeTime } from '@/lib/utils';
 
 export default function LeadsPage() {
   const [page, setPage] = useState(1);

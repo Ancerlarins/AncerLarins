@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
+import type { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 import type { MapProperty } from '@/types';
 import { formatPriceShort } from '@/lib/utils';
 
@@ -18,13 +19,13 @@ export default function PropertyMap({
   onBoundsChange,
 }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any>(null);
-  const markersRef = useRef<any>(null);
+  const mapInstanceRef = useRef<LeafletMap | null>(null);
+  const markersRef = useRef<LeafletMarker[] | null>(null);
 
   const onBoundsChangeRef = useRef(onBoundsChange);
   onBoundsChangeRef.current = onBoundsChange;
 
-  const emitBounds = useCallback((map: any) => {
+  const emitBounds = useCallback((map: LeafletMap) => {
     if (!onBoundsChangeRef.current) return;
     if (!map || !map.getContainer() || !map.getSize().x) return;
     try {
@@ -112,12 +113,12 @@ export default function PropertyMap({
 
       // Remove old markers
       if (markersRef.current) {
-        markersRef.current.forEach((m: any) => {
+        markersRef.current.forEach((m: LeafletMarker) => {
           try { map.removeLayer(m); } catch { /* map already cleaned up */ }
         });
       }
 
-      const markers: any[] = [];
+      const markers: LeafletMarker[] = [];
 
       properties.forEach((property) => {
         if (!property.latitude || !property.longitude) return;

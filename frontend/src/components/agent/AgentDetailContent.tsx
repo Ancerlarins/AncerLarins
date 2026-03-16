@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, startTransition } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Navbar from '@/components/layout/Navbar';
@@ -18,7 +18,7 @@ export default function AgentDetailContent({ id }: { id: string }) {
 
   useEffect(() => {
     if (!id) return;
-    setLoading(true);
+    startTransition(() => { setLoading(true); });
     Promise.all([
       api.get(`/agents/${id}`),
       api.get(`/agents/${id}/reviews`).catch(() => ({ data: { data: [] } })),

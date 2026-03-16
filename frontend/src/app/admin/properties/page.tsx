@@ -4,9 +4,8 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useGetAdminPropertiesQuery, useApprovePropertyMutation, useRejectPropertyMutation, useDeletePropertyMutation } from '@/store/api/adminApi';
-import { PropertyStatusBadge, VerificationBadge } from '@/components/dashboard/StatusBadge';
-import { formatPrice, formatDate } from '@/lib/utils';
-import type { PropertyStatus } from '@/types';
+import { PropertyStatusBadge } from '@/components/dashboard/StatusBadge';
+import { formatPrice } from '@/lib/utils';
 
 const STATUS_TABS = [
   { value: 'pending', label: 'Pending' },

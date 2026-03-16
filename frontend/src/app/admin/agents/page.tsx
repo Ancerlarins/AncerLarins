@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { useGetAdminAgentsQuery, useVerifyAgentMutation, useRejectAgentMutation } from '@/store/api/adminApi';
 import { VerificationBadge } from '@/components/dashboard/StatusBadge';
-import type { VerificationStatus } from '@/types';
+
 
 const STATUS_TABS: { value: string; label: string }[] = [
   { value: '', label: 'All' },

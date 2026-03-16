@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, startTransition } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Navbar from '@/components/layout/Navbar';
@@ -16,8 +16,10 @@ export default function AgentsPage() {
   const [meta, setMeta] = useState<{ current_page: number; last_page: number; total: number } | null>(null);
 
   useEffect(() => {
-    setLoading(true);
-    setError('');
+    startTransition(() => {
+      setLoading(true);
+      setError('');
+    });
     api.get('/agents', { params: { page, per_page: 12 } })
       .then(({ data }) => {
         setAgents(data.data || []);

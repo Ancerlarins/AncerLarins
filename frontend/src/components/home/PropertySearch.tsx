@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGetPropertyTypesQuery } from '@/store/api/locationApi';
 
@@ -16,17 +16,7 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]['id'];
 
-const LOCATIONS = [
-  'Ikoyi',
-  'Victoria Island',
-  'Lekki Phase 1',
-  'Banana Island',
-  'Ajah',
-  'Ikeja GRA',
-  'Yaba',
-  'Oniru',
-  'Osapa London',
-];
+
 
 const LOCATION_GROUPS = [
   { label: 'Island', items: ['Banana Island', 'Ikoyi', 'Victoria Island'] },
@@ -233,7 +223,7 @@ function CustomSelect({
 
   useEffect(() => {
     if (!isOpen) return;
-    updateDirection();
+    startTransition(() => { updateDirection(); });
     window.addEventListener('scroll', updateDirection, { passive: true });
     window.addEventListener('resize', updateDirection, { passive: true });
     return () => {

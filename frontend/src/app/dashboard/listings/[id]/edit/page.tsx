@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { listingSchema, type ListingFormData } from '@/lib/schemas/listing';
@@ -18,7 +17,6 @@ const FURNISHING_OPTIONS: { value: Furnishing; label: string }[] = [
 
 export default function EditListingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const router = useRouter();
   const { data, isLoading: loading } = useGetMyPropertyByIdQuery(id);
   const [updateProperty, { isLoading: saving }] = useUpdatePropertyMutation();
   const { data: statesData } = useGetStatesQuery();
