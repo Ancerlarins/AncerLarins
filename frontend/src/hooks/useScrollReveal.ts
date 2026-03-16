@@ -19,11 +19,14 @@ export function useScrollReveal({
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    startTransition(() => { setPrefersReducedMotion(mq.matches); });
     if (mq.matches) {
-      setIsVisible(true);
+      startTransition(() => {
+        setPrefersReducedMotion(true);
+        setIsVisible(true);
+      });
       return;
     }
+    startTransition(() => { setPrefersReducedMotion(mq.matches); });
     const handler = (e: MediaQueryListEvent) => {
       setPrefersReducedMotion(e.matches);
       if (e.matches) setIsVisible(true);

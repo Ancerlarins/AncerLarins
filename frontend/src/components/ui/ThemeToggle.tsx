@@ -7,12 +7,14 @@ export default function ThemeToggle({ className = '' }: { className?: string }) 
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    startTransition(() => { setMounted(true); });
     const stored = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const isDark = stored === 'dark' || (!stored && prefersDark);
-    setDark(isDark);
     document.documentElement.classList.toggle('dark', isDark);
+    startTransition(() => {
+      setMounted(true);
+      setDark(isDark);
+    });
   }, []);
 
   const toggle = () => {
