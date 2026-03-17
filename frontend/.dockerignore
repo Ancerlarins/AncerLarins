@@ -4,5 +4,6 @@ node_modules
 *.log
 .env*
 tests/
+src/test/
 coverage/
 .editorconfig

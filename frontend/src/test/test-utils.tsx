@@ -9,14 +9,13 @@ import uiReducer from '@/store/slices/uiSlice';
 
 function createTestStore(preloadedState?: Record<string, unknown>) {
   return configureStore({
-    // @ts-ignore -- test store: RTK Query type inference conflict
     reducer: {
       [baseApi.reducerPath]: baseApi.reducer,
       auth: authReducer,
       search: searchReducer,
       ui: uiReducer,
-    },
-    // @ts-ignore -- test store: duplicate CombinedState types from RTK Query
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any,
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware().concat(baseApi.middleware),
     preloadedState,
