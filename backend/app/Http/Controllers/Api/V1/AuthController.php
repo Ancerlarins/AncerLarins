@@ -28,11 +28,15 @@ class AuthController extends Controller
 
     public function register(RegisterRequest $request): JsonResponse
     {
-        $user = $this->authService->register($request->validated());
+        $result = $this->authService->register($request->validated());
+
+        $message = ($result['otp_delivered'] ?? false)
+            ? 'Registration successful. Please verify your phone.'
+            : 'Registration successful but we could not send the verification code. Please request a new one.';
 
         return $this->successResponse([
-            'user' => new UserResource($user),
-        ], 'Registration successful. Please verify your phone.', 201);
+            'user' => new UserResource($result['user']),
+        ], $message, 201);
     }
 
     public function verifyOtp(VerifyOtpRequest $request): JsonResponse
@@ -73,6 +77,15 @@ class AuthController extends Controller
             return $this->errorResponse('Invalid credentials.', 401);
         }
 
+        if (! ($result['otp_delivered'] ?? false)) {
+            $reason = $result['otp_reason'] ?? 'unknown';
+            if ($reason === 'rate_limited') {
+                return $this->errorResponse('Too many OTP requests. Please wait before trying again.', 429);
+            }
+
+            return $this->errorResponse('Unable to send OTP. Please try again later.', 503);
+        }
+
         return $this->successResponse(null, 'OTP sent to your phone.');
     }
 
@@ -91,7 +104,11 @@ class AuthController extends Controller
             'phone' => ['required', 'string', 'regex:/^(\+234|0)[789]\d{9}$/'],
         ]);
 
-        $this->authService->forgotPassword($request->phone);
+        $result = $this->authService->forgotPassword($request->phone);
+
+        if (($result['otp_reason'] ?? null) === 'rate_limited') {
+            return $this->errorResponse('Too many OTP requests. Please wait before trying again.', 429);
+        }
 
         return $this->successResponse(null, 'If an account exists, an OTP has been sent.');
     }

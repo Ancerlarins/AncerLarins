@@ -41,9 +41,9 @@ class AuthService
                 ]);
             }
 
-            $this->sendOtp($phone, OtpPurpose::Registration);
+            $otpResult = $this->sendOtp($phone, OtpPurpose::Registration);
 
-            return $user;
+            return ['user' => $user, 'otp_delivered' => $otpResult['sent'], 'otp_reason' => $otpResult['reason'] ?? null];
         });
     }
 
@@ -65,9 +65,9 @@ class AuthService
             return null;
         }
 
-        $this->sendOtp($phone, OtpPurpose::Login);
+        $otpResult = $this->sendOtp($phone, OtpPurpose::Login);
 
-        return ['otp_sent' => true];
+        return ['otp_sent' => true, 'otp_delivered' => $otpResult['sent'], 'otp_reason' => $otpResult['reason'] ?? null];
     }
 
     public function verifyOtp(string $phone, string $code, string $purpose): ?array
@@ -163,19 +163,24 @@ class AuthService
         $user->refreshTokens()->active()->update(['revoked_at' => now()]);
     }
 
-    public function forgotPassword(string $phone): void
+    public function forgotPassword(string $phone): array
     {
         $phone = $this->normalizePhone($phone);
         $user = User::where('phone', $phone)->first();
 
         if (! $user) {
-            return; // Silent fail to prevent user enumeration
+            return ['otp_delivered' => false, 'otp_reason' => 'no_user'];
         }
 
-        $this->sendOtp($phone, OtpPurpose::PasswordReset);
+        $otpResult = $this->sendOtp($phone, OtpPurpose::PasswordReset);
+
+        return ['otp_delivered' => $otpResult['sent'], 'otp_reason' => $otpResult['reason'] ?? null];
     }
 
-    public function sendOtp(string $phone, OtpPurpose $purpose): void
+    /**
+     * @return array{sent: bool, reason?: string}
+     */
+    public function sendOtp(string $phone, OtpPurpose $purpose): array
     {
         $recentCount = OtpCode::where('phone', $phone)
             ->where('purpose', $purpose)
@@ -183,7 +188,13 @@ class AuthService
             ->count();
 
         if ($recentCount >= 3) {
-            return;
+            Log::warning('OTP rate-limited', [
+                'phone_suffix' => substr($phone, -4),
+                'purpose' => $purpose->value,
+                'count_last_hour' => $recentCount,
+            ]);
+
+            return ['sent' => false, 'reason' => 'rate_limited'];
         }
 
         $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
@@ -208,22 +219,37 @@ class AuthService
                 'purpose' => $purpose->value,
             ]);
 
-            return;
+            return ['sent' => false, 'reason' => 'not_configured'];
         }
 
         try {
             $message = "Your AncerLarins verification code is {$code}. Valid for 10 minutes.";
-            $this->termiiService->sendSms($phone, $message);
-            Log::info('OTP sent via SMS', [
+            $response = $this->termiiService->sendSms($phone, $message);
+
+            if (isset($response['code']) && $response['code'] === 'ok') {
+                Log::info('OTP sent via SMS', [
+                    'phone_suffix' => substr($phone, -4),
+                    'purpose' => $purpose->value,
+                ]);
+
+                return ['sent' => true];
+            }
+
+            Log::error('OTP delivery rejected by Termii', [
                 'phone_suffix' => substr($phone, -4),
                 'purpose' => $purpose->value,
+                'response' => $response,
             ]);
+
+            return ['sent' => false, 'reason' => 'delivery_failed'];
         } catch (\Throwable $e) {
             Log::error('OTP delivery failed', [
                 'phone_suffix' => substr($phone, -4),
                 'purpose' => $purpose->value,
                 'error' => $e->getMessage(),
             ]);
+
+            return ['sent' => false, 'reason' => 'delivery_failed'];
         }
     }
 

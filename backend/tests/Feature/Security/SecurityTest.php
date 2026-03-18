@@ -22,6 +22,7 @@ class SecurityTest extends TestCase
 
         $this->mock(TermiiService::class, function ($mock) {
             $mock->shouldReceive('sendOtp')->andReturn(true);
+            $mock->shouldReceive('sendSms')->andReturn(['code' => 'ok', 'message_id' => 'test']);
         });
     }
 
