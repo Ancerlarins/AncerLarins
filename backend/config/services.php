@@ -39,7 +39,7 @@ return [
 
     'termii' => [
         'api_key' => env('TERMII_API_KEY'),
-        'base_url' => env('TERMII_BASE_URL', 'https://api.ng.termii.com/api'),
+        'base_url' => env('TERMII_BASE_URL', 'https://v3.api.termii.com/api'),
         'sender_id' => env('TERMII_SENDER_ID', 'AncerLarins'),
         'webhook_secret' => env('TERMII_WEBHOOK_SECRET'),
         'webhook_ips' => array_filter(explode(',', env('TERMII_WEBHOOK_IPS', ''))),
