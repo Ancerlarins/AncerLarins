@@ -18,7 +18,7 @@ class AuthService
         protected TermiiService $termiiService,
     ) {}
 
-    public function register(array $data): User
+    public function register(array $data): array
     {
         return DB::transaction(function () use ($data) {
             $phone = $this->normalizePhone($data['phone']);
