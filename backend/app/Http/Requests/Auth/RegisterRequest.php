@@ -37,6 +37,7 @@ class RegisterRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:255', 'unique:users,email'],
             'password' => ['nullable', 'string', Password::min(10)->mixedCase()->numbers()->symbols()],
             'role' => ['sometimes', Rule::in([UserRole::User->value, UserRole::Agent->value])],
+            'channel' => ['nullable', 'string', 'in:email,sms'],
         ];
 
         if (config('services.turnstile.secret_key')) {

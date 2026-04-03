@@ -45,6 +45,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,60');
         Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])->middleware('throttle:5,1');
         Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:3,60');
+        Route::post('/resend-otp', [AuthController::class, 'resendOtp'])->middleware('throttle:3,60');
         Route::post('/refresh', [AuthController::class, 'refresh'])->middleware('throttle:30,60');
     });
 

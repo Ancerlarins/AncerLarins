@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\OtpChannel;
 use App\Enums\OtpPurpose;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -15,13 +16,14 @@ class OtpCode extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'phone', 'code_hash', 'purpose', 'expires_at', 'verified_at', 'attempts',
+        'phone', 'email', 'code_hash', 'purpose', 'channel', 'expires_at', 'verified_at', 'attempts',
     ];
 
     protected function casts(): array
     {
         return [
             'purpose' => OtpPurpose::class,
+            'channel' => OtpChannel::class,
             'expires_at' => 'datetime',
             'verified_at' => 'datetime',
             'attempts' => 'integer',
@@ -40,6 +42,11 @@ class OtpCode extends Model
     public function scopeForPhone(Builder $query, string $phone, OtpPurpose $purpose): Builder
     {
         return $query->where('phone', $phone)->where('purpose', $purpose);
+    }
+
+    public function scopeForEmail(Builder $query, string $email, OtpPurpose $purpose): Builder
+    {
+        return $query->where('email', $email)->where('purpose', $purpose);
     }
 
     // ── Helpers ──────────────────────────────────────────

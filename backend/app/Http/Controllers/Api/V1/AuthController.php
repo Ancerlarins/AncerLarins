@@ -7,17 +7,13 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\VerifyOtpRequest;
 use App\Http\Resources\UserResource;
+use App\Models\User;
 use App\Services\AuthService;
 use App\Traits\ApiResponse;
 use App\Traits\AttachesAuthCookies;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-/**
- * @group Authentication
- *
- * OTP-based authentication for the AncerLarins platform.
- */
 class AuthController extends Controller
 {
     use ApiResponse, AttachesAuthCookies;
@@ -30,12 +26,14 @@ class AuthController extends Controller
     {
         $result = $this->authService->register($request->validated());
 
+        $channel = $result['otp_channel'] ?? 'sms';
         $message = ($result['otp_delivered'] ?? false)
-            ? 'Registration successful. Please verify your phone.'
+            ? "Registration successful. A verification code has been sent to your {$channel}."
             : 'Registration successful but we could not send the verification code. Please request a new one.';
 
         return $this->successResponse([
             'user' => new UserResource($result['user']),
+            'otp_channel' => $channel,
         ], $message, 201);
     }
 
@@ -44,9 +42,10 @@ class AuthController extends Controller
         $data = $request->validated();
 
         $result = $this->authService->verifyOtp(
-            $data['phone'],
+            $data['phone'] ?? null,
             $data['code'],
             $data['purpose'],
+            $data['email'] ?? null,
         );
 
         if (! $result) {
@@ -60,7 +59,7 @@ class AuthController extends Controller
             $response['refresh_token'] = $result['refresh_token'];
         }
 
-        $jsonResponse = $this->successResponse($response, 'Phone verified successfully.');
+        $jsonResponse = $this->successResponse($response, 'OTP verified successfully.');
 
         if (isset($result['access_token'])) {
             $this->attachAuthCookies($jsonResponse, $result['access_token'], $result['refresh_token']);
@@ -86,25 +85,27 @@ class AuthController extends Controller
             return $this->errorResponse('Unable to send OTP. Please try again later.', 503);
         }
 
-        return $this->successResponse(null, 'OTP sent to your phone.');
+        $channel = $result['channel'] ?? 'sms';
+        $target = $channel === 'email' ? 'email' : 'phone';
+
+        return $this->successResponse([
+            'channel' => $channel,
+        ], "OTP sent to your {$target}.");
     }
 
-    /**
-     * Forgot Password
-     *
-     * Send a password reset OTP to the user's phone.
-     *
-     * @bodyParam phone string required The user's phone number. Example: +2348012345678
-     *
-     * @response 200 {"success": true, "message": "If an account exists, an OTP has been sent.", "data": null}
-     */
     public function forgotPassword(Request $request): JsonResponse
     {
         $request->validate([
-            'phone' => ['required', 'string', 'regex:/^(\+234|0)[789]\d{9}$/'],
+            'phone' => ['required_without:email', 'nullable', 'string', 'regex:/^(\+234|0)[789]\d{9}$/'],
+            'email' => ['required_without:phone', 'nullable', 'email'],
+            'channel' => ['nullable', 'string', 'in:email,sms'],
         ]);
 
-        $result = $this->authService->forgotPassword($request->phone);
+        $result = $this->authService->forgotPassword(
+            $request->phone,
+            $request->email,
+            $request->channel,
+        );
 
         if (($result['otp_reason'] ?? null) === 'rate_limited') {
             return $this->errorResponse('Too many OTP requests. Please wait before trying again.', 429);
@@ -113,13 +114,51 @@ class AuthController extends Controller
         return $this->successResponse(null, 'If an account exists, an OTP has been sent.');
     }
 
-    /**
-     * Refresh Token
-     *
-     * Exchange a refresh token for new access and refresh tokens.
-     * Reads the refresh_token from the httpOnly cookie, or falls back
-     * to the request body for backwards compatibility.
-     */
+    public function resendOtp(Request $request): JsonResponse
+    {
+        $request->validate([
+            'phone' => ['required_without:email', 'nullable', 'string', 'regex:/^(\+234|0)[789]\d{9}$/'],
+            'email' => ['required_without:phone', 'nullable', 'email'],
+            'purpose' => ['required', 'string', 'in:registration,login,password_reset,phone_change'],
+            'channel' => ['required', 'string', 'in:email,sms'],
+        ]);
+
+        $phone = $request->phone;
+        $email = $request->email;
+
+        if ($email && ! $phone) {
+            $user = User::where('email', $email)->first();
+            $phone = $user?->phone;
+        } elseif ($phone && ! $email) {
+            $normalizedPhone = $this->authService->normalizePhone($phone);
+            $user = User::where('phone', $normalizedPhone)->first();
+            $email = $user?->email;
+        }
+
+        $otpResult = $this->authService->sendOtp(
+            phone: $phone ? $this->authService->normalizePhone($phone) : null,
+            purpose: \App\Enums\OtpPurpose::from($request->purpose),
+            email: $email,
+            channel: \App\Enums\OtpChannel::from($request->channel),
+        );
+
+        if (! $otpResult['sent']) {
+            $reason = $otpResult['reason'] ?? 'unknown';
+            if ($reason === 'rate_limited') {
+                return $this->errorResponse('Too many OTP requests. Please wait before trying again.', 429);
+            }
+
+            return $this->errorResponse('Unable to send OTP. Please try again later.', 503);
+        }
+
+        $channel = $otpResult['channel']->value;
+        $target = $channel === 'email' ? 'email' : 'phone';
+
+        return $this->successResponse([
+            'channel' => $channel,
+        ], "OTP sent to your {$target}.");
+    }
+
     public function refresh(Request $request): JsonResponse
     {
         $refreshToken = $request->cookie('refresh_token') ?? $request->input('refresh_token');

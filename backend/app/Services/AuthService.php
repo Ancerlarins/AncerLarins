@@ -2,14 +2,17 @@
 
 namespace App\Services;
 
+use App\Enums\OtpChannel;
 use App\Enums\OtpPurpose;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
+use App\Mail\OtpMail;
 use App\Models\OtpCode;
 use App\Models\RefreshToken;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class AuthService
@@ -22,12 +25,13 @@ class AuthService
     {
         return DB::transaction(function () use ($data) {
             $phone = $this->normalizePhone($data['phone']);
+            $email = $data['email'] ?? null;
 
             $user = new User([
                 'first_name' => $data['first_name'],
                 'last_name' => $data['last_name'],
                 'phone' => $phone,
-                'email' => $data['email'] ?? null,
+                'email' => $email,
                 'password_hash' => $data['password'] ?? null,
             ]);
             $user->forceFill([
@@ -41,9 +45,21 @@ class AuthService
                 ]);
             }
 
-            $otpResult = $this->sendOtp($phone, OtpPurpose::Registration);
+            $channel = $this->resolveChannel($data['channel'] ?? null, $email);
 
-            return ['user' => $user, 'otp_delivered' => $otpResult['sent'], 'otp_reason' => $otpResult['reason'] ?? null];
+            $otpResult = $this->sendOtp(
+                phone: $phone,
+                purpose: OtpPurpose::Registration,
+                email: $email,
+                channel: $channel,
+            );
+
+            return [
+                'user' => $user,
+                'otp_delivered' => $otpResult['sent'],
+                'otp_reason' => $otpResult['reason'] ?? null,
+                'otp_channel' => $otpResult['channel']->value,
+            ];
         });
     }
 
@@ -56,73 +72,98 @@ class AuthService
             $user = User::where('phone', $phone)->first();
         }
 
-        $phone = $user?->phone;
-
         if (! $user || ! $user->isActive()) {
-            // Simulate OTP send delay to prevent user enumeration via timing
             usleep(random_int(200_000, 500_000));
 
             return null;
         }
 
-        $otpResult = $this->sendOtp($phone, OtpPurpose::Login);
+        $channel = $this->resolveChannel($data['channel'] ?? null, $user->email);
 
-        return ['otp_sent' => true, 'otp_delivered' => $otpResult['sent'], 'otp_reason' => $otpResult['reason'] ?? null];
+        $otpResult = $this->sendOtp(
+            phone: $user->phone,
+            purpose: OtpPurpose::Login,
+            email: $user->email,
+            channel: $channel,
+        );
+
+        return [
+            'otp_sent' => true,
+            'otp_delivered' => $otpResult['sent'],
+            'otp_reason' => $otpResult['reason'] ?? null,
+            'channel' => $otpResult['channel']->value,
+        ];
     }
 
-    public function verifyOtp(string $phone, string $code, string $purpose): ?array
+    public function verifyOtp(?string $phone, string $code, string $purpose, ?string $email = null): ?array
     {
-        $phone = $this->normalizePhone($phone);
+        $phone = $phone ? $this->normalizePhone($phone) : null;
         $purpose = OtpPurpose::from($purpose);
 
         $codeHash = hash_hmac('sha256', $code, config('app.key'));
 
-        $otp = OtpCode::where('phone', $phone)
-            ->where('purpose', $purpose)
+        $query = OtpCode::where('purpose', $purpose)
             ->where('code_hash', $codeHash)
             ->valid()
-            ->latest('created_at')
-            ->first();
+            ->latest('created_at');
+
+        if ($email) {
+            $query->where('email', $email);
+        } else {
+            $query->where('phone', $phone);
+        }
+
+        $otp = $query->first();
 
         if (! $otp) {
-            // Increment attempts on the latest valid OTP for this phone+purpose (brute-force protection)
-            $latestOtp = OtpCode::where('phone', $phone)
-                ->where('purpose', $purpose)
+            $latestQuery = OtpCode::where('purpose', $purpose)
                 ->valid()
-                ->latest('created_at')
-                ->first();
+                ->latest('created_at');
+
+            if ($email) {
+                $latestQuery->where('email', $email);
+            } else {
+                $latestQuery->where('phone', $phone);
+            }
+
+            $latestOtp = $latestQuery->first();
 
             if ($latestOtp) {
                 $latestOtp->incrementAttempts();
 
-                // Lock OTP after 5 failed attempts
                 if ($latestOtp->attempts >= 5) {
-                    $latestOtp->markVerified(); // Consume it so it can't be tried again
+                    $latestOtp->markVerified();
                 }
             }
 
             return null;
         }
 
-        // Reject if too many failed attempts on this OTP
         if ($otp->attempts >= 5) {
             return null;
         }
 
         $otp->markVerified();
 
-        $user = User::where('phone', $phone)->first();
+        $user = $email
+            ? User::where('email', $email)->first()
+            : User::where('phone', $phone)->first();
 
         if (! $user) {
             return null;
         }
 
         if ($purpose === OtpPurpose::Registration || $purpose === OtpPurpose::Login) {
-            $user->forceFill([
-                'phone_verified' => true,
+            $updates = [
                 'last_login_at' => now(),
                 'last_login_ip' => request()->ip(),
-            ])->save();
+            ];
+
+            if ($phone) {
+                $updates['phone_verified'] = true;
+            }
+
+            $user->forceFill($updates)->save();
 
             $tokens = $this->generateTokens($user);
 
@@ -163,54 +204,186 @@ class AuthService
         $user->refreshTokens()->active()->update(['revoked_at' => now()]);
     }
 
-    public function forgotPassword(string $phone): array
+    public function forgotPassword(?string $phone, ?string $email = null, ?string $channel = null): array
     {
-        $phone = $this->normalizePhone($phone);
-        $user = User::where('phone', $phone)->first();
+        if ($email) {
+            $user = User::where('email', $email)->first();
+        } else {
+            $phone = $this->normalizePhone($phone);
+            $user = User::where('phone', $phone)->first();
+        }
 
         if (! $user) {
             return ['otp_delivered' => false, 'otp_reason' => 'no_user'];
         }
 
-        $otpResult = $this->sendOtp($phone, OtpPurpose::PasswordReset);
+        $resolvedChannel = $this->resolveChannel($channel, $user->email);
 
-        return ['otp_delivered' => $otpResult['sent'], 'otp_reason' => $otpResult['reason'] ?? null];
+        $otpResult = $this->sendOtp(
+            phone: $user->phone,
+            purpose: OtpPurpose::PasswordReset,
+            email: $user->email,
+            channel: $resolvedChannel,
+        );
+
+        return [
+            'otp_delivered' => $otpResult['sent'],
+            'otp_reason' => $otpResult['reason'] ?? null,
+            'channel' => $otpResult['channel']->value,
+        ];
     }
 
-    /**
-     * @return array{sent: bool, reason?: string}
-     */
-    public function sendOtp(string $phone, OtpPurpose $purpose): array
+    public function sendOtp(?string $phone, OtpPurpose $purpose, ?string $email = null, ?OtpChannel $channel = null): array
     {
-        $recentCount = OtpCode::where('phone', $phone)
+        $channel = $channel ?? ($email ? OtpChannel::Email : OtpChannel::Sms);
+        $identifier = $channel === OtpChannel::Email ? $email : $phone;
+
+        $identifierColumn = $channel === OtpChannel::Email ? 'email' : 'phone';
+        $recentCount = OtpCode::where($identifierColumn, $identifier)
             ->where('purpose', $purpose)
             ->where('created_at', '>=', now()->subHour())
             ->count();
 
         if ($recentCount >= 3) {
             Log::warning('OTP rate-limited', [
-                'phone_suffix' => substr($phone, -4),
+                'identifier' => $channel === OtpChannel::Email ? $email : substr($phone, -4),
+                'channel' => $channel->value,
                 'purpose' => $purpose->value,
                 'count_last_hour' => $recentCount,
             ]);
 
-            return ['sent' => false, 'reason' => 'rate_limited'];
+            return ['sent' => false, 'reason' => 'rate_limited', 'channel' => $channel];
         }
 
         $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
         if (app()->environment('local')) {
-            Log::info('DEV OTP', ['phone_suffix' => substr($phone, -4), 'code' => $code]);
+            Log::info('DEV OTP', [
+                'identifier' => $channel === OtpChannel::Email ? $email : substr($phone, -4),
+                'code' => $code,
+            ]);
         }
 
         $codeHash = hash_hmac('sha256', $code, config('app.key'));
 
         OtpCode::create([
             'phone' => $phone,
+            'email' => $email,
             'code_hash' => $codeHash,
             'purpose' => $purpose,
+            'channel' => $channel,
             'expires_at' => now()->addMinutes(10),
         ]);
+
+        if ($channel === OtpChannel::Email) {
+            $result = $this->sendOtpViaEmail($code, $email, $purpose);
+
+            if (! $result['sent'] && $phone) {
+                Log::warning('Email OTP failed, falling back to SMS', [
+                    'email' => $email,
+                    'purpose' => $purpose->value,
+                ]);
+
+                return $this->sendOtpViaSms($code, $phone, $purpose);
+            }
+
+            return $result;
+        }
+
+        return $this->sendOtpViaSms($code, $phone, $purpose);
+    }
+
+    public function recordLogin(User $user): void
+    {
+        $user->forceFill([
+            'last_login_at' => now(),
+            'last_login_ip' => request()->ip(),
+        ])->save();
+    }
+
+    public function generateTokens(User $user): array
+    {
+        $user->tokens()->delete();
+
+        $tokenName = request()->userAgent() ?: 'api';
+        $accessToken = $user->createToken($tokenName)->plainTextToken;
+
+        $rawRefreshToken = Str::random(64);
+        RefreshToken::create([
+            'user_id' => $user->id,
+            'token_hash' => hash('sha256', $rawRefreshToken),
+            'expires_at' => now()->addDays(30),
+            'ip_address' => request()->ip(),
+            'device_info' => mb_substr(request()->userAgent() ?? '', 0, 500),
+        ]);
+
+        return [
+            'access_token' => $accessToken,
+            'refresh_token' => $rawRefreshToken,
+        ];
+    }
+
+    public function normalizePhone(string $phone): string
+    {
+        $phone = preg_replace('/[\s\-\(\)]+/', '', $phone);
+
+        if (str_starts_with($phone, '0')) {
+            return '+234'.substr($phone, 1);
+        }
+
+        if (str_starts_with($phone, '234') && ! str_starts_with($phone, '+')) {
+            return '+'.$phone;
+        }
+
+        return $phone;
+    }
+
+    private function resolveChannel(?string $channel, ?string $email): OtpChannel
+    {
+        if ($channel) {
+            return OtpChannel::from($channel);
+        }
+
+        if ($email && $this->isMailConfigured()) {
+            return OtpChannel::Email;
+        }
+
+        return OtpChannel::Sms;
+    }
+
+    private function sendOtpViaEmail(string $code, string $email, OtpPurpose $purpose): array
+    {
+        if (! $this->isMailConfigured()) {
+            Log::warning('OTP email delivery skipped — mail not configured');
+
+            return ['sent' => false, 'reason' => 'not_configured', 'channel' => OtpChannel::Email];
+        }
+
+        try {
+            Mail::to($email)->send(new OtpMail($code, $purpose));
+
+            Log::info('OTP sent via email', [
+                'email' => $email,
+                'purpose' => $purpose->value,
+            ]);
+
+            return ['sent' => true, 'channel' => OtpChannel::Email];
+        } catch (\Throwable $e) {
+            Log::error('OTP email delivery failed', [
+                'email' => $email,
+                'purpose' => $purpose->value,
+                'error' => $e->getMessage(),
+            ]);
+
+            return ['sent' => false, 'reason' => 'delivery_failed', 'channel' => OtpChannel::Email];
+        }
+    }
+
+    private function sendOtpViaSms(string $code, ?string $phone, OtpPurpose $purpose): array
+    {
+        if (! $phone) {
+            return ['sent' => false, 'reason' => 'no_phone', 'channel' => OtpChannel::Sms];
+        }
 
         $provider = config('services.sms.provider', 'termii');
         $fallback = config('services.sms.fallback');
@@ -234,7 +407,7 @@ class AuthService
                 'purpose' => $purpose->value,
             ]);
 
-            return ['sent' => false, 'reason' => 'not_configured'];
+            return ['sent' => false, 'reason' => 'not_configured', 'channel' => OtpChannel::Sms];
         }
 
         try {
@@ -248,7 +421,7 @@ class AuthService
                     'purpose' => $purpose->value,
                 ]);
 
-                return ['sent' => true];
+                return ['sent' => true, 'channel' => OtpChannel::Sms];
             }
 
             Log::error('OTP delivery rejected by SMS provider', [
@@ -258,7 +431,7 @@ class AuthService
                 'response' => $response,
             ]);
 
-            return ['sent' => false, 'reason' => 'delivery_failed'];
+            return ['sent' => false, 'reason' => 'delivery_failed', 'channel' => OtpChannel::Sms];
         } catch (\Throwable $e) {
             Log::error('OTP delivery failed', [
                 'phone_suffix' => substr($phone, -4),
@@ -266,54 +439,20 @@ class AuthService
                 'error' => $e->getMessage(),
             ]);
 
-            return ['sent' => false, 'reason' => 'delivery_failed'];
+            return ['sent' => false, 'reason' => 'delivery_failed', 'channel' => OtpChannel::Sms];
         }
     }
 
-    public function recordLogin(User $user): void
+    private function isMailConfigured(): bool
     {
-        $user->forceFill([
-            'last_login_at' => now(),
-            'last_login_ip' => request()->ip(),
-        ])->save();
-    }
+        $mailer = config('mail.default');
 
-    public function generateTokens(User $user): array
-    {
-        // Revoke existing access tokens to prevent token accumulation
-        $user->tokens()->delete();
-
-        $tokenName = request()->userAgent() ?: 'api';
-        $accessToken = $user->createToken($tokenName)->plainTextToken;
-
-        $rawRefreshToken = Str::random(64);
-        RefreshToken::create([
-            'user_id' => $user->id,
-            'token_hash' => hash('sha256', $rawRefreshToken),
-            'expires_at' => now()->addDays(30),
-            'ip_address' => request()->ip(),
-            'device_info' => mb_substr(request()->userAgent() ?? '', 0, 500),
-        ]);
-
-        return [
-            'access_token' => $accessToken,
-            'refresh_token' => $rawRefreshToken,
-        ];
-    }
-
-    public function normalizePhone(string $phone): string
-    {
-        // Remove spaces, dashes, parens
-        $phone = preg_replace('/[\s\-\(\)]+/', '', $phone);
-
-        if (str_starts_with($phone, '0')) {
-            return '+234'.substr($phone, 1);
+        if ($mailer === 'log' || $mailer === 'array') {
+            return true;
         }
 
-        if (str_starts_with($phone, '234') && ! str_starts_with($phone, '+')) {
-            return '+'.$phone;
-        }
+        $host = config('mail.mailers.smtp.host');
 
-        return $phone;
+        return $host && ! str_contains($host, 'example.com');
     }
 }
