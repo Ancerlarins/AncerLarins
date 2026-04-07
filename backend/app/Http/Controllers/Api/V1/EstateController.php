@@ -45,7 +45,7 @@ class EstateController extends Controller
 
         if ($request->filled('q')) {
             $q = str_replace(['%', '_'], ['\\%', '\\_'], $request->input('q'));
-            $query->where('name', 'ilike', '%'.$q.'%');
+            $query->where('name', 'like', '%'.$q.'%');
         }
 
         $estates = $query->paginate($request->perPage(15));
@@ -141,7 +141,7 @@ class EstateController extends Controller
 
         if ($request->filled('q')) {
             $q = str_replace(['%', '_'], ['\\%', '\\_'], $request->input('q'));
-            $query->where('name', 'ilike', '%'.$q.'%');
+            $query->where('name', 'like', '%'.$q.'%');
         }
 
         $estates = $query->paginate($request->perPage(20));

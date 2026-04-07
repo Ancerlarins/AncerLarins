@@ -55,7 +55,7 @@ class SearchService
         return Cache::remember($cacheKey, 3600, function () use ($query) {
             $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $query);
 
-            $areas = Area::where('name', 'ilike', "%{$escaped}%")
+            $areas = Area::where('name', 'like', "%{$escaped}%")
                 ->active()
                 ->with('city')
                 ->limit(4)
@@ -68,7 +68,7 @@ class SearchService
                     'parent_name' => $a->city?->name,
                 ]);
 
-            $cities = City::where('name', 'ilike', "%{$escaped}%")
+            $cities = City::where('name', 'like', "%{$escaped}%")
                 ->active()
                 ->with('state')
                 ->limit(3)
@@ -81,7 +81,7 @@ class SearchService
                     'parent_name' => $c->state?->name,
                 ]);
 
-            $propertyTypes = PropertyType::where('name', 'ilike', "%{$escaped}%")
+            $propertyTypes = PropertyType::where('name', 'like', "%{$escaped}%")
                 ->active()
                 ->limit(3)
                 ->get()

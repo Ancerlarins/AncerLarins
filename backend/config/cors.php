@@ -9,7 +9,9 @@ return [
         env('FRONTEND_URL', 'http://localhost:3000'),
     ],
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => [
+        env('CORS_ALLOWED_PATTERN', ''),
+    ],
 
     'allowed_headers' => ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
 
