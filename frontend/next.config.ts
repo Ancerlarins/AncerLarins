@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   images: {
     remotePatterns: [
+      { protocol: 'https', hostname: 'api.ancerlarins.com' },
       { protocol: 'https', hostname: 'res.cloudinary.com' },
       { protocol: 'https', hostname: 'pictures-nigeria.jijistatic.net' },
       { protocol: 'https', hostname: 'images.propertypro.ng' },

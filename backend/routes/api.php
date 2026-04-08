@@ -41,12 +41,12 @@ Route::prefix('v1')->group(function () {
 
     // ── Public: Auth ────────────────────────────────────
     Route::prefix('auth')->group(function () {
-        Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,60');
-        Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,60');
-        Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])->middleware('throttle:5,1');
-        Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:3,60');
-        Route::post('/resend-otp', [AuthController::class, 'resendOtp'])->middleware('throttle:3,60');
-        Route::post('/refresh', [AuthController::class, 'refresh'])->middleware('throttle:30,60');
+        Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:10,1');
+        Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
+        Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])->middleware('throttle:10,1');
+        Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1');
+        Route::post('/resend-otp', [AuthController::class, 'resendOtp'])->middleware('throttle:5,1');
+        Route::post('/refresh', [AuthController::class, 'refresh'])->middleware('throttle:30,1');
     });
 
     // ── Public: Passkey Authentication ──────────────────

@@ -5,9 +5,10 @@ return [
 
     'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
-    'allowed_origins' => [
+    'allowed_origins' => array_filter([
         env('FRONTEND_URL', 'http://localhost:3000'),
-    ],
+        env('FRONTEND_URL_WWW', ''),
+    ]),
 
     'allowed_origins_patterns' => [
         env('CORS_ALLOWED_PATTERN', ''),
